@@ -1,0 +1,70 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Proxy Server",
+            "type": "shell",
+            "command": "npm",
+            "args": ["start"],
+            "options": {
+                "cwd": "${workspaceFolder}/proxy-server"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Flutter Web",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "run",
+                "-d",
+                "web-server",
+                "--web-port=8082"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Open Chrome",
+            "type": "shell",
+            "command": "node",
+            "args": ["scripts/open-chrome.js"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "dependsOn": ["Start Proxy Server", "Start Flutter Web"],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Full App (Proxy + Web + Chrome)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/launch-full-app.js",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Launch App (Proxy + Web)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/launch-app.js",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Start Proxy Server Only",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/start-proxy.js",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Start Flutter Web Only",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/start-flutter.js",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        }
+    ]
+}
