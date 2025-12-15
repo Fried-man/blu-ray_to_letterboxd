@@ -1,2 +1,3 @@
-# blu-ray_to_letterboxd
-Blu-ray.com To Letterboxd Data Transfer
+# blu_ray_to_letterboxd
+
+A new Flutter project.
