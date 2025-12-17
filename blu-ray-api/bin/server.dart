@@ -119,6 +119,6 @@ void main(List<String> args) async {
 
   final server = await serve(handler, ip, _config.port);
   print('Blu-ray API Server listening on http://${server.address.host}:${server.port}');
-  print('Health check: http://${server.address.host}:${server.port}/health');
-  print('Collection API: http://${server.address.host}:${server.port}/api/collection/{userId}');
+  print('Health check: http://localhost:${server.port}/health');
+  print('Collection API: http://localhost:${server.port}/api/collection/{userId}');
 }

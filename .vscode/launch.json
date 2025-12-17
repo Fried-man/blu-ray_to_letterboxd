@@ -20,6 +20,7 @@
             "env": {
                 "PORT": "3003"
             },
+            "stopOnEntry": false,
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -27,12 +28,11 @@
             "name": "Start Flutter Web Only",
             "type": "dart",
             "request": "launch",
-            "program": "app/lib/main.dart",
+            "program": "lib/main.dart",
             "cwd": "${workspaceFolder}/app",
             "args": [
                 "-d",
-                "web-server",
-                "--web-port=8083"
+                "chrome"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"

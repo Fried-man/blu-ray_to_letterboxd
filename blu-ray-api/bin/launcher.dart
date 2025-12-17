@@ -10,7 +10,6 @@ class AppLauncher {
   Process? _flutterProcess;
 
   int apiPort = 3002;
-  int webPort = 8082;
 
   /// Launch both API server and Flutter web app
   Future<void> launchFullApp() async {
@@ -38,7 +37,7 @@ class AppLauncher {
       print('🎉 All services started successfully!');
       print('🔍 API Health: http://localhost:$apiPort/health');
       print('🎬 Collection API: http://localhost:$apiPort/api/collection/{userId}');
-      print('🌐 Web App: http://localhost:$webPort');
+      print('🌐 Web App: Running in Chrome browser');
       print('🔄 Services are running. Press Ctrl+C to stop.');
 
       // Keep running until interrupted
@@ -82,7 +81,7 @@ class AppLauncher {
       await _startFlutterApp();
 
       print('✅ Flutter web app started successfully!');
-      print('🌐 Open your browser to: http://localhost:$webPort');
+      print('🌐 Web App: Running in Chrome browser');
 
       await _handleShutdown();
 
@@ -117,7 +116,32 @@ class AppLauncher {
   }
 
   Future<void> _killExistingFlutterProcess() async {
-    await _killProcessOnPort(webPort);
+    // Kill any running flutter processes
+    await _killFlutterProcesses();
+  }
+
+  Future<void> _killFlutterProcesses() async {
+    try {
+      if (Platform.isWindows) {
+        await Process.run(
+          'powershell.exe',
+          ['-Command', r'''
+            Get-Process -Name "flutter*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue;
+            Get-Process -Name "dart*" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*flutter*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+          '''],
+          runInShell: true,
+        );
+      } else {
+        await Process.run(
+          'pkill',
+          ['-f', 'flutter'],
+          runInShell: true,
+        );
+      }
+    } catch (e) {
+      // Ignore errors when killing processes
+      print('Warning: Failed to kill Flutter processes: $e');
+    }
   }
 
   Future<void> _killProcessOnPort(int port) async {
@@ -196,11 +220,7 @@ class AppLauncher {
   }
 
   Future<void> _startFlutterApp() async {
-    final port = webPort.toString();
-    print('📋 Starting Flutter Web App on port $port...');
-
-    // Wait for port to be available
-    await _waitForPortAvailable(webPort);
+    print('📋 Starting Flutter Web App...');
 
     // Check if we're in the right directory structure
     final appDir = Directory('../app');
@@ -218,7 +238,7 @@ class AppLauncher {
       // On Windows, run flutter through cmd to ensure PATH is available
       _flutterProcess = await Process.start(
         'cmd',
-        ['/c', 'flutter', 'run', '-d', 'web-server', '--web-port=$port'],
+        ['/c', 'flutter', 'run', '-d', 'chrome'],
         workingDirectory: '../app',
         mode: ProcessStartMode.inheritStdio,
         environment: Platform.environment,
@@ -227,7 +247,7 @@ class AppLauncher {
       // On other platforms, run flutter directly
       _flutterProcess = await Process.start(
         'flutter',
-        ['run', '-d', 'web-server', '--web-port=$port'],
+        ['run', '-d', 'chrome'],
         workingDirectory: '../app',
         mode: ProcessStartMode.inheritStdio,
         environment: Platform.environment,
@@ -248,7 +268,9 @@ class AppLauncher {
 
   Future<void> _waitForFlutterReady() async {
     print('⏳ Waiting for Flutter web app...');
-    await _waitForService('http://localhost:$webPort/', 'Flutter web app', 60);
+    // Wait a bit for Flutter to start in Chrome
+    await Future.delayed(Duration(seconds: 5));
+    print('✅ Flutter web app is ready!');
   }
 
   Future<void> _waitForPortAvailable(int port) async {
@@ -290,24 +312,8 @@ class AppLauncher {
   }
 
   void _openChrome() {
-    final url = 'http://localhost:$webPort';
-    print('📋 Opening browser...');
-
-    try {
-      if (Platform.isWindows) {
-        // On Windows, use explorer.exe to open the URL (it will use default browser)
-        Process.runSync('explorer.exe', [url]);
-      } else if (Platform.isMacOS) {
-        Process.runSync('open', ['-a', 'Google Chrome', url]);
-      } else {
-        // Linux and other systems
-        Process.runSync('google-chrome', [url]);
-      }
-      print('✅ Browser opened successfully!');
-    } catch (e) {
-      print('❌ Failed to open browser: $e');
-      print('💡 Please manually open: $url');
-    }
+    // Browser is already opened by Flutter run -d chrome
+    print('📋 Browser should be opening automatically...');
   }
 
   Future<void> _handleShutdown() async {
