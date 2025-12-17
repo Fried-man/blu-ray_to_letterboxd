@@ -36,6 +36,7 @@ cd blu-ray_to_letterboxd
 
 ### 2. Install Flutter Dependencies
 ```bash
+cd app
 flutter pub get
 ```
 
@@ -57,14 +58,15 @@ Use the pre-configured VS Code launch configurations:
 4. Click the green play button
 
 This will automatically:
-- Start the proxy server on port 3002
-- Start the Flutter web app on port 8082
+- Kill any existing processes on ports 3002 and 8082
+- Start the proxy server on port 3002 and wait for it to be ready
+- Start the Flutter web app on port 8082 and wait for it to be ready
 - Open Chrome to http://localhost:8082
 
 **Alternative VS Code Launches:**
 - "Launch App (Proxy + Web)" - Starts services without opening Chrome
-- "Start Proxy Server Only" - Only starts the proxy server
-- "Start Flutter Web Only" - Only starts the web app
+- "Start Proxy Server Only" - Only starts the proxy server (cleans up first)
+- "Start Flutter Web Only" - Only starts the web app (cleans up first)
 
 **Option B: Manual Terminal Commands**
 
@@ -77,6 +79,7 @@ npm start
 
 In a new terminal, start the Flutter web app:
 ```bash
+cd app
 flutter run -d web-server --web-port=8082
 ```
 *App runs on http://localhost:8082*
@@ -114,11 +117,13 @@ Each Blu-ray item contains:
 
 ### Running Tests
 ```bash
+cd app
 flutter test
 ```
 
 ### Building for Production
 ```bash
+cd app
 flutter build web
 ```
 
@@ -131,12 +136,23 @@ npm run dev  # if you add a dev script
 ## Troubleshooting
 
 ### Port Conflicts
-If you get "address already in use" errors:
-1. Kill existing processes on ports 3002 and 8082
+The VS Code launch configurations automatically clean up existing processes. If you still get "address already in use" errors:
+
+1. Manually kill processes:
+   - Windows: `taskkill /F /PID <PID>` (find PIDs with `netstat -ano | findstr :3002`)
+   - Linux/Mac: `kill -9 $(lsof -ti:3002)`
+
 2. Or change ports in the code:
    - `proxy-server/server.js`: Change PORT variable
    - `lib/services/blu_ray_scraper.dart`: Update _proxyBaseUrl
    - Run with different --web-port
+
+### Blank White Screen
+If the web app shows a blank white screen:
+1. Check that both proxy (port 3002) and web app (port 8082) are running
+2. Verify proxy health: `http://localhost:3002/health`
+3. Check browser console for JavaScript errors
+4. Try refreshing the page after services are fully started
 
 ### CORS Issues
 - For development: Use the local proxy server
@@ -150,19 +166,23 @@ If you get "address already in use" errors:
 ## Project Structure
 
 ```
-├── lib/
-│   ├── main.dart                 # App entry point
-│   ├── models/                   # Data models
-│   ├── providers/                # Riverpod providers
-│   ├── routers/                  # GoRouter configuration
-│   ├── screens/                  # UI screens
-│   ├── services/                 # Business logic & API calls
-│   └── utils/                    # Utilities (logger, etc.)
+├── app/                          # Flutter application
+│   ├── lib/
+│   │   ├── main.dart             # App entry point
+│   │   ├── models/               # Data models
+│   │   ├── providers/            # Riverpod providers
+│   │   ├── router/               # GoRouter configuration
+│   │   ├── screens/              # UI screens
+│   │   ├── services/             # Business logic & API calls
+│   │   └── utils/                # Utilities (logger, etc.)
+│   ├── test/                     # Unit and integration tests
+│   ├── web/                      # Web build assets
+│   └── pubspec.yaml              # Flutter dependencies
 ├── proxy-server/                 # CORS proxy server
 │   ├── server.js                 # Express server
 │   └── package.json              # Node.js dependencies
-├── test/                         # Unit and integration tests
-└── pubspec.yaml                  # Flutter dependencies
+├── scripts/                      # Development scripts
+└── README.md                     # This file
 ```
 
 ## Technologies Used
