@@ -65,9 +65,11 @@ VS Code will automatically:
 - Keep all services running and handle graceful shutdown
 
 **Alternative VS Code Launches:**
-- **"Launch Full App (Compound)"** - Starts both services using compound launch
-- **"Start API Server Only"** - Only starts the API server
-- **"Start Flutter Web Only"** - Only starts the web app
+- **"Launch Full App (Compound)"** - Starts both services simultaneously for debugging
+- **"Start API Server Only"** - Starts API server on port 3003 (debug port, avoids conflicts)
+- **"Start Flutter Web Only"** - Starts Flutter web app on port 8083 (debug port, avoids conflicts)
+
+**Note:** Individual debug launches use different ports (3003/8083) to avoid conflicts with the main launcher (3002/8082).
 
 **Option B: Dart Launcher (Terminal)**
 

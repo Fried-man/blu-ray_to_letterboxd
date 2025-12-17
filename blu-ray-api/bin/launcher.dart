@@ -9,6 +9,9 @@ class AppLauncher {
   Process? _apiProcess;
   Process? _flutterProcess;
 
+  int apiPort = 3002;
+  int webPort = 8082;
+
   /// Launch both API server and Flutter web app
   Future<void> launchFullApp() async {
     print('🚀 Launching Blu-ray API + Web App...');
@@ -32,11 +35,10 @@ class AppLauncher {
       // Optionally open Chrome
       _openChrome();
 
-      final port = Platform.environment['PORT'] ?? '3002';
       print('🎉 All services started successfully!');
-      print('🔍 API Health: http://localhost:$port/health');
-      print('🎬 Collection API: http://localhost:$port/api/collection/{userId}');
-      print('🌐 Web App: http://localhost:8082');
+      print('🔍 API Health: http://localhost:$apiPort/health');
+      print('🎬 Collection API: http://localhost:$apiPort/api/collection/{userId}');
+      print('🌐 Web App: http://localhost:$webPort');
       print('🔄 Services are running. Press Ctrl+C to stop.');
 
       // Keep running until interrupted
@@ -80,7 +82,7 @@ class AppLauncher {
       await _startFlutterApp();
 
       print('✅ Flutter web app started successfully!');
-      print('🌐 Open your browser to: http://localhost:8082');
+      print('🌐 Open your browser to: http://localhost:$webPort');
 
       await _handleShutdown();
 
@@ -91,30 +93,53 @@ class AppLauncher {
     }
   }
 
+
   Future<void> _killExistingProcesses() async {
     print('🧹 Cleaning up existing processes...');
     await Future.wait([
       _killExistingApiProcess(),
       _killExistingFlutterProcess(),
     ]);
-    // Give processes time to fully terminate
-    await Future.delayed(Duration(seconds: 1));
+    // Give processes time to fully terminate and sockets to be released
+    print('⏳ Waiting for processes to terminate...');
+    await Future.delayed(Duration(seconds: 3));
+
+    // Double-check and kill any remaining processes
+    await Future.wait([
+      _killExistingApiProcess(),
+      _killExistingFlutterProcess(),
+    ]);
+    await Future.delayed(Duration(seconds: 2));
   }
 
   Future<void> _killExistingApiProcess() async {
-    await _killProcessOnPort(3002);
+    await _killProcessOnPort(apiPort);
   }
 
   Future<void> _killExistingFlutterProcess() async {
-    await _killProcessOnPort(8082);
+    await _killProcessOnPort(webPort);
   }
 
   Future<void> _killProcessOnPort(int port) async {
     try {
       if (Platform.isWindows) {
+        // More robust Windows process killing using PowerShell
         await Process.run(
-          'cmd',
-          ['/c', 'for /f "tokens=5" %a in (\'netstat -ano ^| findstr :$port\') do taskkill /PID %a /F 2>nul'],
+          'powershell.exe',
+          ['-Command', '''
+            \$processes = netstat -ano | findstr :$port | ForEach-Object {
+              \$fields = \$_ -split '\\s+';
+              if (\$fields.Length -ge 5 -and \$fields[1] -match ':$port') {
+                \$pid = \$fields[4];
+                try {
+                  Stop-Process -Id \$pid -Force -ErrorAction Stop;
+                  Write-Host "Killed process \$pid on port $port";
+                } catch {
+                  # Process might already be gone
+                }
+              }
+            }
+          '''],
           runInShell: true,
         );
       } else {
@@ -126,13 +151,21 @@ class AppLauncher {
       }
     } catch (e) {
       // Ignore errors when killing processes
+      print('Warning: Failed to kill processes on port $port: $e');
     }
   }
 
   Future<void> _startApiServer() async {
-    // Get the port from environment or default to 3002
-    final port = Platform.environment['PORT'] ?? '3002';
+    // Use the configured port
+    final port = apiPort.toString();
     print('📋 Starting API Server on port $port...');
+
+    // Wait for port to be available
+    await _waitForPortAvailable(apiPort);
+
+    // Set PORT environment variable for the child process
+    final env = Map<String, String>.from(Platform.environment);
+    env['PORT'] = port;
 
     // API server runs in current directory (blu-ray-api)
     if (Platform.isWindows) {
@@ -142,7 +175,7 @@ class AppLauncher {
         ['/c', 'dart', 'run', 'bin/server.dart'],
         workingDirectory: '.',
         mode: ProcessStartMode.inheritStdio,
-        environment: Platform.environment,
+        environment: env,
       );
     } else {
       // On other platforms, run dart directly
@@ -151,7 +184,7 @@ class AppLauncher {
         ['run', 'bin/server.dart'],
         workingDirectory: '.',
         mode: ProcessStartMode.inheritStdio,
-        environment: Platform.environment,
+        environment: env,
       );
     }
 
@@ -163,7 +196,11 @@ class AppLauncher {
   }
 
   Future<void> _startFlutterApp() async {
-    print('📋 Starting Flutter Web App on port 8082...');
+    final port = webPort.toString();
+    print('📋 Starting Flutter Web App on port $port...');
+
+    // Wait for port to be available
+    await _waitForPortAvailable(webPort);
 
     // Check if we're in the right directory structure
     final appDir = Directory('../app');
@@ -181,7 +218,7 @@ class AppLauncher {
       // On Windows, run flutter through cmd to ensure PATH is available
       _flutterProcess = await Process.start(
         'cmd',
-        ['/c', 'flutter', 'run', '-d', 'web-server', '--web-port=8082'],
+        ['/c', 'flutter', 'run', '-d', 'web-server', '--web-port=$port'],
         workingDirectory: '../app',
         mode: ProcessStartMode.inheritStdio,
         environment: Platform.environment,
@@ -190,7 +227,7 @@ class AppLauncher {
       // On other platforms, run flutter directly
       _flutterProcess = await Process.start(
         'flutter',
-        ['run', '-d', 'web-server', '--web-port=8082'],
+        ['run', '-d', 'web-server', '--web-port=$port'],
         workingDirectory: '../app',
         mode: ProcessStartMode.inheritStdio,
         environment: Platform.environment,
@@ -206,12 +243,31 @@ class AppLauncher {
 
   Future<void> _waitForApiReady() async {
     print('⏳ Waiting for API server...');
-    await _waitForService('http://localhost:3002/health', 'API server', 30);
+    await _waitForService('http://localhost:$apiPort/health', 'API server', 30);
   }
 
   Future<void> _waitForFlutterReady() async {
     print('⏳ Waiting for Flutter web app...');
-    await _waitForService('http://localhost:8082/', 'Flutter web app', 60);
+    await _waitForService('http://localhost:$webPort/', 'Flutter web app', 60);
+  }
+
+  Future<void> _waitForPortAvailable(int port) async {
+    for (var attempt = 1; attempt <= 10; attempt++) {
+      try {
+        // Try to bind to the port briefly to check if it's available
+        final server = await ServerSocket.bind(InternetAddress.anyIPv4, port, backlog: 1);
+        await server.close();
+        print('✅ Port $port is available');
+        return;
+      } catch (e) {
+        // Port is still in use
+      }
+
+      print('⏳ Waiting for port $port to become available... (attempt $attempt/10)');
+      await Future.delayed(Duration(seconds: 1));
+    }
+
+    throw Exception('Port $port is still in use after 10 seconds');
   }
 
   Future<void> _waitForService(String url, String serviceName, int maxAttempts) async {
@@ -234,7 +290,7 @@ class AppLauncher {
   }
 
   void _openChrome() {
-    const url = 'http://localhost:8082';
+    final url = 'http://localhost:$webPort';
     print('📋 Opening browser...');
 
     try {
@@ -249,7 +305,7 @@ class AppLauncher {
       }
       print('✅ Browser opened successfully!');
     } catch (e) {
-      print('❌ Failed to open Chrome: $e');
+      print('❌ Failed to open browser: $e');
       print('💡 Please manually open: $url');
     }
   }

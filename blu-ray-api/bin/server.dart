@@ -27,6 +27,9 @@ final _config = ApiConfig.fromEnvironment();
 // Create scraper instance
 final _scraper = BluRayScraper();
 
+// Store startup timestamp
+DateTime? _startupTime;
+
 // Configure routes.
 final _router = Router()
   ..get('/', _rootHandler)
@@ -42,6 +45,7 @@ Response _healthHandler(Request request) {
     jsonEncode({
       'status': 'ok',
       'timestamp': DateTime.now().toIso8601String(),
+      'startedAt': _startupTime?.toIso8601String(),
       'service': 'blu-ray-api',
     }),
     headers: {'content-type': 'application/json'},
@@ -99,6 +103,9 @@ Future<Response> _collectionHandler(Request request) async {
 }
 
 void main(List<String> args) async {
+  // Record startup time
+  _startupTime = DateTime.now();
+
   print('Starting Blu-ray API Server with config: $_config');
 
   // Use configured host and port

@@ -17,6 +17,9 @@
             "request": "launch",
             "program": "bin/server.dart",
             "cwd": "${workspaceFolder}/blu-ray-api",
+            "env": {
+                "PORT": "3003"
+            },
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -29,7 +32,7 @@
             "args": [
                 "-d",
                 "web-server",
-                "--web-port=8082"
+                "--web-port=8083"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
