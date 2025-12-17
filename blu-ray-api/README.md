@@ -75,6 +75,19 @@ dart pub get
 ```
 
 ### Run the Server
+
+**Option A: Full Application Launcher (Recommended)**
+```bash
+# Launch both API server and Flutter web app
+dart run bin/launcher.dart
+
+# Or specify components
+dart run bin/launcher.dart full    # Both API and web app
+dart run bin/launcher.dart api     # API server only
+dart run bin/launcher.dart web     # Flutter web app only
+```
+
+**Option B: API Server Only**
 ```bash
 dart run bin/server.dart
 ```

@@ -2,52 +2,54 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Full App (Proxy + Web + Chrome)",
-            "type": "node",
+            "name": "Launch Full App (API + Web)",
+            "type": "dart",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/launch-full-app.js",
+            "program": "blu-ray-api/bin/launcher.dart",
+            "args": ["full"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
-            "name": "Launch App (Proxy + Web)",
-            "type": "node",
+            "name": "Start API Server Only",
+            "type": "dart",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/launch-app.js",
+            "program": "blu-ray-api/bin/server.dart",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
-        },
-        {
-            "name": "Start Proxy Server Only",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/start-proxy.js",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "name": "Start Flutter Web Only",
-            "type": "node",
+            "type": "dart",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/start-flutter.js",
-            "cwd": "${workspaceFolder}",
+            "program": "app/lib/main.dart",
+            "cwd": "${workspaceFolder}/app",
+            "args": [
+                "-d",
+                "web-server",
+                "--web-port=8082"
+            ],
             "console": "integratedTerminal",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch Full App (Compound)",
+            "configurations": [
+                "Start API Server Only",
+                "Start Flutter Web Only"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
         }
     ]
 }

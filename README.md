@@ -40,10 +40,10 @@ cd app
 flutter pub get
 ```
 
-### 3. Setup Proxy Server
+### 3. Install Dart API Dependencies
 ```bash
-cd proxy-server
-npm install
+cd blu-ray-api
+dart pub get
 ```
 
 ### 4. Run the Application
@@ -54,35 +54,48 @@ Use the pre-configured VS Code launch configurations:
 
 1. Open in VS Code
 2. Go to Run & Debug (Ctrl+Shift+D)
-3. Select "Launch Full App (Proxy + Web + Chrome)" from the dropdown
-4. Click the green play button
+3. Select one of the launch options:
+   - **"Launch Full App (API + Web)"** - Starts both API and web app with process management
+   - **"Launch Full App (Compound)"** - Starts both services using compound launch
+   - **"Start API Server Only"** - Only starts the API server
+   - **"Start Flutter Web Only"** - Only starts the web app
 
-This will automatically:
+The launchers will automatically:
 - Kill any existing processes on ports 3002 and 8082
-- Start the proxy server on port 3002 and wait for it to be ready
+- Start the Dart API server on port 3002 and wait for it to be ready
 - Start the Flutter web app on port 8082 and wait for it to be ready
-- Open Chrome to http://localhost:8082
+- Keep all services running and handle graceful shutdown
 
-**Alternative VS Code Launches:**
-- "Launch App (Proxy + Web)" - Starts services without opening Chrome
-- "Start Proxy Server Only" - Only starts the proxy server (cleans up first)
-- "Start Flutter Web Only" - Only starts the web app (cleans up first)
+**Option B: Dart Launcher (Terminal)**
 
-**Option B: Manual Terminal Commands**
+Use the Dart launcher script to start all services:
 
-Start the proxy server:
 ```bash
-cd proxy-server
-npm start
+# Launch both API server and Flutter web app
+cd blu-ray-api
+dart run bin/launcher.dart
+
+# Or specify what to launch
+dart run bin/launcher.dart full    # Both API and web app
+dart run bin/launcher.dart api     # API server only
+dart run bin/launcher.dart web     # Flutter web app only
 ```
-*Server runs on http://localhost:3002*
+
+**Option C: Manual Terminal Commands**
+
+Start the API server:
+```bash
+cd blu-ray-api
+dart run bin/server.dart
+```
+*API server runs on http://localhost:3002*
 
 In a new terminal, start the Flutter web app:
 ```bash
 cd app
 flutter run -d web-server --web-port=8082
 ```
-*App runs on http://localhost:8082*
+*Web app runs on http://localhost:8082*
 
 **Option B: Production**
 
@@ -136,16 +149,17 @@ npm run dev  # if you add a dev script
 ## Troubleshooting
 
 ### Port Conflicts
-The VS Code launch configurations automatically clean up existing processes. If you still get "address already in use" errors:
+The VS Code launch configurations and Dart launcher automatically clean up existing processes. If you still get "address already in use" errors:
 
 1. Manually kill processes:
-   - Windows: `taskkill /F /PID <PID>` (find PIDs with `netstat -ano | findstr :3002`)
-   - Linux/Mac: `kill -9 $(lsof -ti:3002)`
+   - Windows: `taskkill /F /PID <PID>` (find PIDs with `netstat -ano | findstr :3002` or `:8082`)
+   - Linux/Mac: `kill -9 $(lsof -ti:3002)` or `kill -9 $(lsof -ti:8082)`
 
-2. Or change ports in the code:
-   - `proxy-server/server.js`: Change PORT variable
-   - `lib/services/blu_ray_scraper.dart`: Update _proxyBaseUrl
-   - Run with different --web-port
+2. Or change ports in environment variables:
+   - API server: Set `PORT=3003` (default: 3002)
+   - Flutter web app: Use `--web-port=8083` (default: 8082)
+
+3. Or modify the VS Code launch configurations to use different ports
 
 ### Blank White Screen
 If the web app shows a blank white screen:
@@ -166,34 +180,40 @@ If the web app shows a blank white screen:
 ## Project Structure
 
 ```
-├── app/                          # Flutter application
+├── app/                          # Flutter web application
 │   ├── lib/
 │   │   ├── main.dart             # App entry point
 │   │   ├── models/               # Data models
 │   │   ├── providers/            # Riverpod providers
 │   │   ├── router/               # GoRouter configuration
 │   │   ├── screens/              # UI screens
-│   │   ├── services/             # Business logic & API calls
+│   │   ├── services/             # API client
 │   │   └── utils/                # Utilities (logger, etc.)
 │   ├── test/                     # Unit and integration tests
 │   ├── web/                      # Web build assets
 │   └── pubspec.yaml              # Flutter dependencies
-├── proxy-server/                 # CORS proxy server
-│   ├── server.js                 # Express server
-│   └── package.json              # Node.js dependencies
-├── scripts/                      # Development scripts
+├── blu-ray-api/                  # Dart API server
+│   ├── lib/
+│   │   ├── models/               # Data models
+│   │   ├── services/             # Scraping logic
+│   │   ├── utils/                # Utilities
+│   │   └── config.dart           # Configuration
+│   ├── bin/
+│   │   ├── server.dart           # API server
+│   │   └── launcher.dart         # Application launcher
+│   └── pubspec.yaml              # Dart dependencies
 └── README.md                     # This file
 ```
 
 ## Technologies Used
 
-- **Flutter**: UI framework
-- **Dart**: Programming language
+- **Flutter**: Web UI framework
+- **Dart**: Programming language for both client and server
 - **Riverpod**: State management
 - **GoRouter**: Navigation
-- **Dio**: HTTP client
-- **Express.js**: Proxy server
-- **Axios**: Server-side HTTP requests
+- **HTTP**: HTTP client (Flutter) and server (Dart API)
+- **Shelf**: Dart web server framework
+- **CSV**: Data parsing
 
 ## License
 

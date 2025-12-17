@@ -2,12 +2,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Start Proxy Server",
+            "label": "Start API Server",
             "type": "shell",
-            "command": "npm",
-            "args": ["start"],
+            "command": "dart",
+            "args": ["run", "bin/server.dart"],
             "options": {
-                "cwd": "${workspaceFolder}/proxy-server"
+                "cwd": "${workspaceFolder}/blu-ray-api"
             },
             "group": "build",
             "presentation": {
@@ -32,7 +32,7 @@
                 "--web-port=8082"
             ],
             "options": {
-                "cwd": "${workspaceFolder}"
+                "cwd": "${workspaceFolder}/app"
             },
             "group": "build",
             "presentation": {
@@ -47,13 +47,8 @@
             "problemMatcher": []
         },
         {
-            "label": "Open Chrome",
-            "type": "shell",
-            "command": "node",
-            "args": ["scripts/open-chrome.js"],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
+            "label": "Start Full App",
+            "dependsOn": ["Start API Server", "Start Flutter Web"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -63,7 +58,6 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "dependsOn": ["Start Proxy Server", "Start Flutter Web"],
             "problemMatcher": []
         }
     ]
