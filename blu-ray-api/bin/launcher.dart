@@ -32,9 +32,10 @@ class AppLauncher {
       // Optionally open Chrome
       _openChrome();
 
+      final port = Platform.environment['PORT'] ?? '3002';
       print('🎉 All services started successfully!');
-      print('🔍 API Health: http://localhost:3002/health');
-      print('🎬 Collection API: http://localhost:3002/api/collection/{userId}');
+      print('🔍 API Health: http://localhost:$port/health');
+      print('🎬 Collection API: http://localhost:$port/api/collection/{userId}');
       print('🌐 Web App: http://localhost:8082');
       print('🔄 Services are running. Press Ctrl+C to stop.');
 
@@ -56,9 +57,10 @@ class AppLauncher {
       await _killExistingApiProcess();
       await _startApiServer();
 
+      final port = Platform.environment['PORT'] ?? '3002';
       print('✅ API server started successfully!');
-      print('🔍 Health check: http://localhost:3002/health');
-      print('🎬 Collection API: http://localhost:3002/api/collection/{userId}');
+      print('🔍 Health check: http://localhost:$port/health');
+      print('🎬 Collection API: http://localhost:$port/api/collection/{userId}');
 
       await _handleShutdown();
 
@@ -128,17 +130,30 @@ class AppLauncher {
   }
 
   Future<void> _startApiServer() async {
-    print('📋 Starting API Server on port 3002...');
+    // Get the port from environment or default to 3002
+    final port = Platform.environment['PORT'] ?? '3002';
+    print('📋 Starting API Server on port $port...');
 
-    final workingDir = Directory.current.parent.path;
-    final apiDir = '$workingDir${Platform.pathSeparator}blu-ray-api';
-
-    _apiProcess = await Process.start(
-      'dart',
-      ['run', 'bin/server.dart'],
-      workingDirectory: apiDir,
-      mode: ProcessStartMode.inheritStdio,
-    );
+    // API server runs in current directory (blu-ray-api)
+    if (Platform.isWindows) {
+      // On Windows, run dart through cmd to ensure PATH is available
+      _apiProcess = await Process.start(
+        'cmd',
+        ['/c', 'dart', 'run', 'bin/server.dart'],
+        workingDirectory: '.',
+        mode: ProcessStartMode.inheritStdio,
+        environment: Platform.environment,
+      );
+    } else {
+      // On other platforms, run dart directly
+      _apiProcess = await Process.start(
+        'dart',
+        ['run', 'bin/server.dart'],
+        workingDirectory: '.',
+        mode: ProcessStartMode.inheritStdio,
+        environment: Platform.environment,
+      );
+    }
 
     _apiProcess!.exitCode.then((code) {
       if (code != 0) {
@@ -150,15 +165,37 @@ class AppLauncher {
   Future<void> _startFlutterApp() async {
     print('📋 Starting Flutter Web App on port 8082...');
 
-    final workingDir = Directory.current.parent.path;
-    final appDir = '$workingDir${Platform.pathSeparator}app';
+    // Check if we're in the right directory structure
+    final appDir = Directory('../app');
+    if (!await appDir.exists()) {
+      throw Exception('Flutter app directory not found at ../app. Make sure you\'re running from blu-ray-api directory.');
+    }
 
-    _flutterProcess = await Process.start(
-      'flutter',
-      ['run', '-d', 'web-server', '--web-port=8082'],
-      workingDirectory: appDir,
-      mode: ProcessStartMode.inheritStdio,
-    );
+    final pubspecFile = File('../app/pubspec.yaml');
+    if (!await pubspecFile.exists()) {
+      throw Exception('Flutter project not found in ../app directory (missing pubspec.yaml).');
+    }
+
+    // Flutter app runs in ../app directory
+    if (Platform.isWindows) {
+      // On Windows, run flutter through cmd to ensure PATH is available
+      _flutterProcess = await Process.start(
+        'cmd',
+        ['/c', 'flutter', 'run', '-d', 'web-server', '--web-port=8082'],
+        workingDirectory: '../app',
+        mode: ProcessStartMode.inheritStdio,
+        environment: Platform.environment,
+      );
+    } else {
+      // On other platforms, run flutter directly
+      _flutterProcess = await Process.start(
+        'flutter',
+        ['run', '-d', 'web-server', '--web-port=8082'],
+        workingDirectory: '../app',
+        mode: ProcessStartMode.inheritStdio,
+        environment: Platform.environment,
+      );
+    }
 
     _flutterProcess!.exitCode.then((code) {
       if (code != 0) {
@@ -198,18 +235,19 @@ class AppLauncher {
 
   void _openChrome() {
     const url = 'http://localhost:8082';
-    print('📋 Opening Chrome...');
+    print('📋 Opening browser...');
 
     try {
       if (Platform.isWindows) {
-        Process.runSync('cmd', ['/c', 'start chrome "$url"']);
+        // On Windows, use explorer.exe to open the URL (it will use default browser)
+        Process.runSync('explorer.exe', [url]);
       } else if (Platform.isMacOS) {
         Process.runSync('open', ['-a', 'Google Chrome', url]);
       } else {
         // Linux and other systems
         Process.runSync('google-chrome', [url]);
       }
-      print('✅ Chrome opened successfully!');
+      print('✅ Browser opened successfully!');
     } catch (e) {
       print('❌ Failed to open Chrome: $e');
       print('💡 Please manually open: $url');
@@ -224,11 +262,16 @@ class AppLauncher {
       exit(0);
     });
 
-    ProcessSignal.sigterm.watch().listen((_) async {
-      print('\n🛑 Shutting down services...');
-      await _shutdown();
-      exit(0);
-    });
+    // SIGTERM may not be available on all platforms (like Windows)
+    try {
+      ProcessSignal.sigterm.watch().listen((_) async {
+        print('\n🛑 Shutting down services...');
+        await _shutdown();
+        exit(0);
+      });
+    } catch (e) {
+      // SIGTERM not supported on this platform, continue without it
+    }
 
     // Wait indefinitely
     await Future.delayed(Duration(days: 365));

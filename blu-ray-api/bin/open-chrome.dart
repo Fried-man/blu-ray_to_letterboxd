@@ -10,7 +10,8 @@ void main() {
 
   try {
     if (Platform.isWindows) {
-      Process.runSync('cmd', ['/c', 'start chrome "$url"']);
+      // On Windows, use explorer.exe to open the URL (it will use default browser)
+      Process.runSync('explorer.exe', [url]);
     } else if (Platform.isMacOS) {
       Process.runSync('open', ['-a', 'Google Chrome', url]);
     } else {

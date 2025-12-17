@@ -54,29 +54,32 @@ Use the pre-configured VS Code launch configurations:
 
 1. Open in VS Code
 2. Go to Run & Debug (Ctrl+Shift+D)
-3. Select one of the launch options:
-   - **"Launch Full App (API + Web)"** - Starts both API and web app with process management
-   - **"Launch Full App (Compound)"** - Starts both services using compound launch
-   - **"Start API Server Only"** - Only starts the API server
-   - **"Start Flutter Web Only"** - Only starts the web app
+3. Select **"Launch Full App (API + Web)"** from the dropdown
+4. Click the green play button
 
-The launchers will automatically:
+VS Code will automatically:
 - Kill any existing processes on ports 3002 and 8082
 - Start the Dart API server on port 3002 and wait for it to be ready
 - Start the Flutter web app on port 8082 and wait for it to be ready
+- Open the default web browser to the web app
 - Keep all services running and handle graceful shutdown
+
+**Alternative VS Code Launches:**
+- **"Launch Full App (Compound)"** - Starts both services using compound launch
+- **"Start API Server Only"** - Only starts the API server
+- **"Start Flutter Web Only"** - Only starts the web app
 
 **Option B: Dart Launcher (Terminal)**
 
 Use the Dart launcher script to start all services:
 
 ```bash
-# Launch both API server and Flutter web app
+# From the project root directory:
 cd blu-ray-api
 dart run bin/launcher.dart
 
 # Or specify what to launch
-dart run bin/launcher.dart full    # Both API and web app
+dart run bin/launcher.dart full    # Both API and web app (default)
 dart run bin/launcher.dart api     # API server only
 dart run bin/launcher.dart web     # Flutter web app only
 ```

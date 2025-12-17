@@ -5,9 +5,9 @@
             "name": "Launch Full App (API + Web)",
             "type": "dart",
             "request": "launch",
-            "program": "blu-ray-api/bin/launcher.dart",
+            "program": "bin/launcher.dart",
             "args": ["full"],
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/blu-ray-api",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -15,8 +15,8 @@
             "name": "Start API Server Only",
             "type": "dart",
             "request": "launch",
-            "program": "blu-ray-api/bin/server.dart",
-            "cwd": "${workspaceFolder}",
+            "program": "bin/server.dart",
+            "cwd": "${workspaceFolder}/blu-ray-api",
             "console": "integratedTerminal",
             "internalConsoleOptions": "openOnSessionStart"
         },
