@@ -52,15 +52,59 @@ class BluRayScraper {
     }
   }
 
-  /// Fetches collection data from the public search endpoint
+  /// Fetches collection data from the public search endpoint with pagination
   Future<List<BluRayItem>> _fetchFromSearchEndpoint(String userId) async {
-    print('🎯 SCRAPER DEBUG: Starting search endpoint fetch for user $userId');
+    logScraper('Fetching collection data from search endpoint for user: $userId');
 
-    // For now, just fetch the first page since pagination seems to return duplicate results
-    final items = await _fetchSearchPage(userId, 1);
+    final allItems = <BluRayItem>[];
+    var page = 1;
+    var hasMorePages = true;
+    final seenUpcs = <String>{}; // Track UPCs to avoid duplicates
 
-    print('✅ SCRAPER DEBUG: Found ${items.length} items from search endpoint');
-    return items;
+    while (hasMorePages && page <= 50) { // Reasonable limit to prevent infinite loops
+      try {
+        final pageItems = await _fetchSearchPage(userId, page);
+
+        if (pageItems.isEmpty) {
+          // No more items on this page, stop pagination
+          hasMorePages = false;
+          logScraper('No more items found on page $page, stopping pagination');
+        } else {
+          var newItemsCount = 0;
+
+          // Only add items we haven't seen before (based on UPC)
+          for (final item in pageItems) {
+            if (item.upc != null && !seenUpcs.contains(item.upc)) {
+              seenUpcs.add(item.upc!);
+              allItems.add(item);
+              newItemsCount++;
+            }
+          }
+
+          if (newItemsCount == 0) {
+            // No new unique items found, stop pagination
+            hasMorePages = false;
+            logScraper('No new unique items found on page $page, stopping pagination');
+          } else {
+            logScraper('Added $newItemsCount new items from page $page (total unique: ${allItems.length})');
+            page++;
+          }
+
+          // Safety check to prevent infinite loops
+          if (page > 20) {
+            logScraper('Reached maximum page limit (20), stopping pagination');
+            hasMorePages = false;
+          }
+        }
+      } catch (e) {
+        logScraper('Failed to fetch page $page', error: e);
+        // Stop on error to avoid infinite loops
+        hasMorePages = false;
+      }
+    }
+
+    logScraper('Successfully fetched ${allItems.length} total unique items from search endpoint');
+    return allItems;
   }
 
   /// Fetches a single page of search results
@@ -90,11 +134,12 @@ class BluRayScraper {
     final items = <BluRayItem>[];
 
     // Look for movie entries in search results
-    // First try to find title and UPC pairs from img tags
+    // Extract from hoverlink anchors with title and cover image
     final imgPattern = RegExp(
-      r'<img[^>]*src="[^"]*covers/(\d+)_[^"]*\.jpg"[^>]*title="([^"]*)"',
+      r'<a[^>]*class="hoverlink"[^>]*title="([^"]*)"[^>]*>.*?<img[^>]*src="[^"]*covers/(\d+)_[^"]*\.jpg"',
       multiLine: true,
       caseSensitive: false,
+      dotAll: true,
     );
 
     final imgMatches = imgPattern.allMatches(htmlContent);
@@ -102,8 +147,8 @@ class BluRayScraper {
 
     for (final match in imgMatches) {
       if (match.groupCount >= 2) {
-        final upc = match.group(1);
-        final titleWithFormat = match.group(2);
+        final titleWithFormat = match.group(1);
+        final upc = match.group(2);
 
         if (titleWithFormat != null && titleWithFormat.isNotEmpty && upc != null) {
           // Parse title and format from the title attribute
