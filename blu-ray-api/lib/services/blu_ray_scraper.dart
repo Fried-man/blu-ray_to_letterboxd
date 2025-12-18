@@ -57,49 +57,38 @@ class BluRayScraper {
     logScraper('Fetching collection data from search endpoint for user: $userId');
 
     final allItems = <BluRayItem>[];
-    var page = 1;
-    var hasMorePages = true;
+    var page = 0; // Start at page 0 as requested
     final seenUpcs = <String>{}; // Track UPCs to avoid duplicates
 
-    while (hasMorePages && page <= 50) { // Reasonable limit to prevent infinite loops
+    while (true) { // Continue until no more pages
       try {
+        logScraper('Fetching page $page');
         final pageItems = await _fetchSearchPage(userId, page);
 
         if (pageItems.isEmpty) {
           // No more items on this page, stop pagination
-          hasMorePages = false;
           logScraper('No more items found on page $page, stopping pagination');
-        } else {
-          var newItemsCount = 0;
+          break;
+        }
 
-          // Only add items we haven't seen before (based on UPC)
-          for (final item in pageItems) {
-            if (item.upc != null && !seenUpcs.contains(item.upc)) {
-              seenUpcs.add(item.upc!);
-              allItems.add(item);
-              newItemsCount++;
-            }
-          }
+        var newItemsCount = 0;
 
-          if (newItemsCount == 0) {
-            // No new unique items found, stop pagination
-            hasMorePages = false;
-            logScraper('No new unique items found on page $page, stopping pagination');
-          } else {
-            logScraper('Added $newItemsCount new items from page $page (total unique: ${allItems.length})');
-            page++;
-          }
-
-          // Safety check to prevent infinite loops
-          if (page > 20) {
-            logScraper('Reached maximum page limit (20), stopping pagination');
-            hasMorePages = false;
+        // Only add items we haven't seen before (based on UPC)
+        for (final item in pageItems) {
+          if (item.upc != null && !seenUpcs.contains(item.upc)) {
+            seenUpcs.add(item.upc!);
+            allItems.add(item);
+            newItemsCount++;
           }
         }
+
+        logScraper('Added $newItemsCount new items from page $page (total unique: ${allItems.length})');
+        page++;
+
       } catch (e) {
         logScraper('Failed to fetch page $page', error: e);
-        // Stop on error to avoid infinite loops
-        hasMorePages = false;
+        // Stop on error
+        break;
       }
     }
 
