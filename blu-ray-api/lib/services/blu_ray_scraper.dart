@@ -27,151 +27,133 @@ class BluRayScraper {
 
   BluRayScraper({http.Client? client}) : _client = client ?? http.Client();
 
-  /// Fetches collection data from both printer-friendly and CSV export URLs
+  /// Fetches collection data from the public search endpoint
   Future<List<BluRayItem>> fetchCollection(String userId) async {
     try {
-      // First try to get data from the collection page
-      final collectionItems = await _fetchPrinterFriendlyData(userId);
+      // Use the public search endpoint to get collection data
+      final collectionItems = await _fetchFromSearchEndpoint(userId);
 
       if (collectionItems.isNotEmpty) {
-        // If we got data from the collection page, try to enhance it with CSV data
+        // Try to enhance with CSV data if available
         try {
           final csvItems = await _fetchCsvData(userId);
           if (csvItems.isNotEmpty) {
             return _mergeCollectionData(collectionItems, csvItems);
           }
         } catch (csvError) {
-          // CSV failed, but we have collection data - continue with that
-          logScraper('Warning: CSV data not available, using collection page data only');
+          // CSV failed, but we have search data - continue with that
+          logScraper('Warning: CSV data not available, using search results only');
         }
       }
 
-      // Return whatever we got from the collection page
       return collectionItems;
     } catch (e) {
       throw Exception('Failed to fetch Blu-ray collection: $e');
     }
   }
 
-  /// Fetches data from all category pages in the collection
-  Future<List<BluRayItem>> _fetchPrinterFriendlyData(String userId) async {
-    logScraper('Fetching collection data for user: $userId');
+  /// Fetches collection data from the public search endpoint
+  Future<List<BluRayItem>> _fetchFromSearchEndpoint(String userId) async {
+    print('🎯 SCRAPER DEBUG: Starting search endpoint fetch for user $userId');
 
-    try {
-      // First, get the main collection page to identify all categories
-      final categories = await _fetchCollectionCategories(userId);
-      logScraper('Found ${categories.length} categories: ${categories.join(', ')}');
+    // For now, just fetch the first page since pagination seems to return duplicate results
+    final items = await _fetchSearchPage(userId, 1);
 
-      final allItems = <BluRayItem>[];
-
-      // Fetch items from each category
-      for (final categoryId in categories) {
-        try {
-          final categoryItems = await _fetchCategoryPage(userId, categoryId);
-          allItems.addAll(categoryItems);
-          logScraper('Added ${categoryItems.length} items from category $categoryId');
-        } catch (e) {
-          logScraper('Failed to fetch category $categoryId', error: e);
-          // Continue with other categories even if one fails
-        }
-      }
-
-      logScraper('Successfully fetched ${allItems.length} total items from all categories');
-      return allItems;
-    } catch (e) {
-      logScraper('Failed to fetch collection data', error: e);
-      rethrow;
-    }
-  }
-
-  /// Fetches the main collection page and extracts all category IDs
-  Future<List<String>> _fetchCollectionCategories(String userId) async {
-    final url = '$_baseUrl?u=$userId';
-
-    final response = await _client.get(Uri.parse(url), headers: _headers);
-    final htmlContent = response.body;
-
-    // Check if we got blocked or need login
-    if (htmlContent.contains('No index') || htmlContent.contains('Access Denied') || htmlContent.contains('You have to be logged in')) {
-      throw Exception('Access blocked. The collection requires login or is private.');
-    }
-
-    final categories = <String>[];
-
-    // Extract category IDs from category links
-    // Look for patterns like: collection.php?u=987553&action=printerfriendly&categoryid=X
-    final categoryPattern = RegExp(
-      r'collection\.php\?[^&]*u=$userId[^&]*&action=printerfriendly[^&]*&categoryid=(\d+)',
-      caseSensitive: false
-    );
-
-    final matches = categoryPattern.allMatches(htmlContent);
-    for (final match in matches) {
-      if (match.groupCount >= 1) {
-        final categoryId = match.group(1);
-        if (categoryId != null && !categories.contains(categoryId)) {
-          categories.add(categoryId);
-          logScraper('Found category ID: $categoryId');
-        }
-      }
-    }
-
-    // Also try to find category links in anchor tags
-    final linkPattern = RegExp(
-      r'<a[^>]*href="[^"]*collection\.php\?[^&]*u=$userId[^&]*&action=printerfriendly[^&]*&categoryid=(\d+)[^"]*"[^>]*>([^<]*)</a>',
-      caseSensitive: false,
-      multiLine: true,
-      dotAll: true
-    );
-
-    final linkMatches = linkPattern.allMatches(htmlContent);
-    for (final match in linkMatches) {
-      if (match.groupCount >= 2) {
-        final categoryId = match.group(1);
-        final categoryName = match.group(2)?.trim();
-        if (categoryId != null && !categories.contains(categoryId)) {
-          categories.add(categoryId);
-          logScraper('Found category link: $categoryId - $categoryName');
-        }
-      }
-    }
-
-    // Based on user's example, try the specific category (7) and a few others
-    if (categories.isEmpty) {
-      // The user specifically mentioned categoryid=7, so let's prioritize that
-      final priorityCategories = ['7', '1', '2', '3', '4', '5', '6', '8', '9', '10'];
-      categories.addAll(priorityCategories);
-      logScraper('Using priority category IDs (including user-mentioned 7): ${priorityCategories.join(', ')}');
-    }
-
-    // Also include empty category for main collection
-    categories.insert(0, '');
-
-    logScraper('Total categories to process: ${categories.length}');
-
-    return categories;
-  }
-
-  /// Fetches items from a specific category page
-  Future<List<BluRayItem>> _fetchCategoryPage(String userId, String categoryId) async {
-    // Build URL with category parameters and showcovers=1
-    final baseParams = 'u=$userId&action=printerfriendly&showcovers=1';
-    final categoryParam = categoryId.isNotEmpty ? '&categoryid=$categoryId' : '';
-    final url = '$_baseUrl?$baseParams$categoryParam';
-
-    logScraper('Fetching category $categoryId: $url');
-
-    final response = await _client.get(Uri.parse(url), headers: _headers);
-    final htmlContent = response.body;
-
-    // Check if we got blocked
-    if (htmlContent.contains('No index') || htmlContent.contains('Access Denied')) {
-      throw Exception('Access blocked for category $categoryId');
-    }
-
-    final items = _parsePrinterFriendlyHtml(htmlContent, categoryId);
+    print('✅ SCRAPER DEBUG: Found ${items.length} items from search endpoint');
     return items;
   }
+
+  /// Fetches a single page of search results
+  Future<List<BluRayItem>> _fetchSearchPage(String userId, int page) async {
+    final url = 'https://www.blu-ray.com/movies/search.php?action=search&search=collection&u=$userId&sortby=relevance&page=$page';
+    logScraper('Fetching search page: $url');
+
+    final response = await _client.get(Uri.parse(url), headers: _headers);
+    final htmlContent = response.body;
+
+    logScraper('Search page response length: ${htmlContent.length}');
+
+    // Check for errors or blocks
+    if (htmlContent.contains('No index') || htmlContent.length < 1000) {
+      logScraper('Search page appears to be blocked or empty');
+      return [];
+    }
+
+    final items = _parseSearchResults(htmlContent);
+    logScraper('Parsed ${items.length} items from search page $page');
+
+    return items;
+  }
+
+  /// Parses search result HTML to extract movie items
+  List<BluRayItem> _parseSearchResults(String htmlContent) {
+    final items = <BluRayItem>[];
+
+    // Look for movie entries in search results
+    // First try to find title and UPC pairs from img tags
+    final imgPattern = RegExp(
+      r'<img[^>]*src="[^"]*covers/(\d+)_[^"]*\.jpg"[^>]*title="([^"]*)"',
+      multiLine: true,
+      caseSensitive: false,
+    );
+
+    final imgMatches = imgPattern.allMatches(htmlContent);
+    logScraper('Found ${imgMatches.length} movie images on search page');
+
+    for (final match in imgMatches) {
+      if (match.groupCount >= 2) {
+        final upc = match.group(1);
+        final titleWithFormat = match.group(2);
+
+        if (titleWithFormat != null && titleWithFormat.isNotEmpty && upc != null) {
+          // Parse title and format from the title attribute
+          final titleMatch = RegExp(r'^(.+?)\s*\(([^)]+)\)$').firstMatch(titleWithFormat);
+          String? title;
+          String? format;
+
+          if (titleMatch != null) {
+            title = titleMatch.group(1)?.trim();
+            final formatPart = titleMatch.group(2)?.trim();
+            if (formatPart != null) {
+              if (formatPart.contains('4K')) {
+                format = '4K';
+              } else if (formatPart.contains('Blu-ray') || formatPart.contains('BD')) {
+                format = 'Blu-ray';
+              } else if (formatPart.contains('DVD')) {
+                format = 'DVD';
+              } else if (formatPart.contains('Digital') || formatPart.contains('UV')) {
+                format = 'Digital';
+              }
+            }
+          } else {
+            title = titleWithFormat.trim();
+          }
+
+          // Extract year from title if present
+          String? year;
+          final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(title ?? '');
+          if (yearMatch != null) {
+            year = yearMatch.group(0);
+          }
+
+          final item = BluRayItem(
+            title: title,
+            year: year,
+            format: format,
+            upc: upc,
+            category: null, // Search results don't have categories
+          );
+
+          items.add(item);
+        }
+      }
+    }
+
+
+    return items;
+  }
+
+
 
   /// Fetches data from the CSV export URL
   Future<List<BluRayItem>> _fetchCsvData(String userId) async {
@@ -211,116 +193,6 @@ class BluRayScraper {
     }
   }
 
-  /// Parses the printer-friendly HTML to extract items with categories
-  List<BluRayItem> _parsePrinterFriendlyHtml(String htmlContent, [String? categoryId]) {
-    final items = <BluRayItem>[];
-
-    // The collection page shows movies in a visual grid with images
-    // Each movie is in a div with an anchor tag containing the title in the title attribute
-
-    // Find all movie entries in the grid layout
-    // Pattern matches: <a class="hoverlink" data-globalproductid="..." data-productid="..." href="..." title="..." ><img src="..." />
-    final moviePattern = RegExp(
-      r'<a[^>]+class="hoverlink"[^>]+data-productid="([^"]*)"[^>]+href="([^"]*)"[^>]+title="([^"]*)"[^>]*>.*?<img[^>]+src="([^"]*)"[^>]*>',
-      multiLine: true,
-      dotAll: true,
-    );
-
-    final matches = moviePattern.allMatches(htmlContent);
-
-    for (final match in matches) {
-      if (match.groupCount >= 4) {
-        final url = match.group(2);
-        final titleWithYear = match.group(3);
-
-        if (titleWithYear != null && titleWithYear.isNotEmpty) {
-          // Parse title and year from the title attribute
-          // Format is typically: "Movie Title (Year)" or "Movie Title (Year-Year)"
-          final titleMatch = RegExp(r'^(.+?)\s*\(([^)]+)\)$').firstMatch(titleWithYear);
-          String? title;
-          String? year;
-
-          if (titleMatch != null) {
-            title = titleMatch.group(1)?.trim();
-            year = titleMatch.group(2)?.trim();
-          } else {
-            title = titleWithYear.trim();
-          }
-
-          // Determine format from URL or title
-          String? format;
-          if (url?.contains('/4K-') ?? false) {
-            format = '4K';
-          } else if (url?.contains('/Blu-ray/') ?? false) {
-            format = 'Blu-ray';
-          } else if (url?.contains('/DVD/') ?? false) {
-            format = 'DVD';
-          }
-
-          // Extract UPC from URL if present
-          String? upc;
-          final upcMatch = RegExp(r'/(\d+)/$').firstMatch(url ?? '');
-          if (upcMatch != null) {
-            upc = upcMatch.group(1);
-          }
-
-          final item = BluRayItem(
-            title: title,
-            year: year,
-            format: format,
-            upc: upc,
-            category: categoryId,
-          );
-
-          items.add(item);
-        }
-      }
-    }
-
-    // If no movies found with the visual grid pattern, try the table-based approach
-    // (this might be used in the printer-friendly view)
-    if (items.isEmpty) {
-      return _parseTableBasedHtml(htmlContent, categoryId);
-    }
-
-    return items;
-  }
-
-  /// Fallback parser for table-based HTML structure (printer-friendly view)
-  List<BluRayItem> _parseTableBasedHtml(String htmlContent, [String? categoryId]) {
-    final items = <BluRayItem>[];
-
-    // Look for table rows containing movie data
-    final tableRows = RegExp(r'<tr[^>]*>(.*?)</tr>', multiLine: true, dotAll: true).allMatches(htmlContent);
-
-    for (final rowMatch in tableRows) {
-      final rowHtml = rowMatch.group(1) ?? '';
-
-      // Extract table cells
-      final cells = RegExp(r'<td[^>]*>(.*?)</td>', multiLine: true, dotAll: true)
-          .allMatches(rowHtml)
-          .map((match) => cleanHtml(match.group(1) ?? ''))
-          .toList();
-
-      if (cells.isNotEmpty && cells[0].isNotEmpty) {
-        // Create item from table cells
-        final item = BluRayItem(
-          title: cells.isNotEmpty ? cells[0] : null,
-          year: cells.length > 1 ? extractYear(cells[1]) : null,
-          format: cells.length > 2 ? cells[2] : null,
-          region: cells.length > 3 ? cells[3] : null,
-          condition: cells.length > 4 ? cells[4] : null,
-          category: categoryId,
-        );
-
-        if (item.title != null && item.title!.isNotEmpty) {
-          items.add(item);
-        }
-      }
-    }
-
-    return items;
-  }
 
   /// Parses CSV data into BluRayItem objects
   List<BluRayItem> _parseCsvData(String csvContent) {
