@@ -9,6 +9,9 @@ final bluRayServiceProvider = Provider<BluRayCollectionService>((ref) {
   return BluRayCollectionService();
 });
 
+/// Provider for current user ID
+final userIdProvider = StateProvider<String>((ref) => '');
+
 /// State for the collection fetch operation
 final collectionStateProvider = StateNotifierProvider<CollectionNotifier, AsyncValue<List<BluRayItem>>>((ref) {
   final service = ref.watch(bluRayServiceProvider);

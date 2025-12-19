@@ -17,11 +17,12 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/collection',
+      path: '/user/:userId/collection',
       name: 'collection',
       builder: (context, state) {
-        logger.logUI('Navigating to collection screen');
-        return const CollectionScreen();
+        final userId = state.pathParameters['userId']!;
+        logger.logUI('Navigating to collection screen for user: $userId');
+        return CollectionScreen(userId: userId);
       },
     ),
   ],

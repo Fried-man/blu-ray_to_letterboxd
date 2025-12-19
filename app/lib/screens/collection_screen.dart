@@ -3,85 +3,128 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/blu_ray_providers.dart';
 import '../models/blu_ray_item.dart';
+import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 
 class CollectionScreen extends ConsumerWidget {
-  const CollectionScreen({super.key});
+  final String userId;
+
+  const CollectionScreen({super.key, required this.userId});
+
+  Future<List<BluRayItem>> _fetchCollectionForUser(String userId) async {
+    final service = BluRayCollectionService();
+    return await service.fetchCollection(userId);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final collectionAsync = ref.watch(collectionStateProvider);
-    final filteredItems = ref.watch(filteredItemsProvider);
-    final summary = ref.watch(collectionSummaryProvider);
-    final categories = ref.watch(availableCategoriesProvider);
-    final formats = ref.watch(availableFormatsProvider);
+    logger.logUI('Building CollectionScreen for user $userId');
 
-    final searchQuery = ref.watch(searchQueryProvider);
-    final selectedCategory = ref.watch(selectedCategoryProvider);
-    final selectedFormat = ref.watch(selectedFormatProvider);
+    return FutureBuilder<List<BluRayItem>>(
+      future: _fetchCollectionForUser(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Collection - User $userId'),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            ),
+            body: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading collection...'),
+                ],
+              ),
+            ),
+          );
+        }
 
-    logger.logUI('Building CollectionScreen with ${filteredItems.length} filtered items');
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Collection - User $userId'),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.home),
+                  onPressed: () {
+                    logger.logUI('User tapped home button from error screen');
+                    context.go('/');
+                  },
+                  tooltip: 'Home',
+                ),
+              ],
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Failed to load collection',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    snapshot.error.toString(),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      logger.logUI('User tapped retry button for user $userId');
+                      // This will trigger a rebuild and refetch
+                      (context as Element).markNeedsBuild();
+                    },
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-    return Scaffold(
+        final items = snapshot.data ?? [];
+        final filteredItems = ref.watch(filteredItemsProvider);
+        final summary = ref.watch(collectionSummaryProvider);
+        final categories = ref.watch(availableCategoriesProvider);
+        final formats = ref.watch(availableFormatsProvider);
+
+        final searchQuery = ref.watch(searchQueryProvider);
+        final selectedCategory = ref.watch(selectedCategoryProvider);
+        final selectedFormat = ref.watch(selectedFormatProvider);
+
+        logger.logUI('CollectionScreen displaying ${filteredItems.length} filtered items out of ${items.length} total');
+
+        return Scaffold(
       appBar: AppBar(
-        title: const Text('Blu-ray Collection'),
+        title: Text('Collection - User $userId'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              logger.logUI('User tapped refresh button');
-              ref.read(collectionStateProvider.notifier).reset();
+              logger.logUI('User tapped refresh button for user $userId');
+              ref.read(collectionStateProvider.notifier).fetchCollection(userId);
+            },
+            tooltip: 'Refresh Collection',
+          ),
+          IconButton(
+            icon: const Icon(Icons.home),
+            onPressed: () {
+              logger.logUI('User tapped home button');
               context.go('/');
             },
-            tooltip: 'Fetch Different Collection',
+            tooltip: 'Home',
           ),
         ],
       ),
-      body: collectionAsync.when(
-        loading: () => const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Loading collection...'),
-            ],
-          ),
-        ),
-        error: (error, stackTrace) {
-          logger.logUI('CollectionScreen displaying error', error: error);
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, size: 64, color: Colors.red),
-                const SizedBox(height: 16),
-                const Text(
-                  'Failed to load collection',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    logger.logUI('User tapped retry button');
-                    context.go('/');
-                  },
-                  child: const Text('Try Again'),
-                ),
-              ],
-            ),
-          );
-        },
-        data: (items) {
-          logger.logUI('CollectionScreen displaying ${items.length} items');
-          return Column(
+      body: Column(
             children: [
               // Summary
               Container(
@@ -226,9 +269,9 @@ class CollectionScreen extends ConsumerWidget {
                       ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

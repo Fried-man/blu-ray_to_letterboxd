@@ -13,7 +13,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -21,7 +20,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _submitId() async {
+  void _submitId() {
     final id = _controller.text.trim();
 
     if (id.isEmpty) {
@@ -41,44 +40,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    logger.logUI('Starting collection fetch for user ID: $id');
-
-    try {
-      final notifier = ref.read(collectionStateProvider.notifier);
-      await notifier.fetchCollection(id);
-
-      logger.logUI('Successfully fetched collection, navigating to collection screen');
-      if (mounted) {
-        context.go('/collection');
-      }
-    } catch (e) {
-      logger.logUI('Collection fetch failed', error: e);
-
-      String errorMessage = 'Failed to fetch collection';
-      if (e.toString().contains('InvalidUserIdException')) {
-        errorMessage = 'Invalid user ID format';
-      } else if (e.toString().contains('CollectionAccessException')) {
-        errorMessage = 'Unable to access collection. The collection might be private.';
-      } else {
-        errorMessage = 'Network error: ${e.toString()}';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    logger.logUI('Navigating to collection screen for user ID: $id');
+    context.go('/user/$id/collection');
   }
 
   @override
@@ -104,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Please enter your user ID from blu-ray.com to import your collection.',
+              'Please enter your user ID from blu-ray.com to view your collection.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
@@ -126,26 +89,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _isLoading ? null : _submitId,
+              onPressed: _submitId,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Fetch Collection',
-                      style: TextStyle(fontSize: 18),
-                    ),
+              child: const Text(
+                'View Collection',
+                style: TextStyle(fontSize: 18),
+              ),
             ),
           ],
         ),
