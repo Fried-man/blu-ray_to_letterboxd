@@ -23,8 +23,6 @@ A Flutter web application that scrapes Blu-ray collection data from blu-ray.com 
 ## Prerequisites
 
 - Flutter SDK (3.0+)
-- Node.js (16+)
-- npm or yarn
 
 ## Installation & Setup
 
