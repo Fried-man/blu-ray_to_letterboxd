@@ -24,7 +24,7 @@ Returns server health status.
 }
 ```
 
-### GET /api/collection/{userId}
+### GET /api/user/{userId}/collection
 Fetches Blu-ray collection data for the specified user ID.
 
 **Parameters:**
@@ -103,7 +103,7 @@ curl http://localhost:3002/health
 
 ### Collection Fetch
 ```bash
-curl http://localhost:3002/api/collection/987553
+curl http://localhost:3002/api/user/987553/collection
 ```
 
 ## Project Structure

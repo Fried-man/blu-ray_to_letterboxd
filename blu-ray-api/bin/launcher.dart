@@ -36,7 +36,7 @@ class AppLauncher {
 
       print('🎉 All services started successfully!');
       print('🔍 API Health: http://localhost:$apiPort/health');
-      print('🎬 Collection API: http://localhost:$apiPort/api/collection/{userId}');
+      print('🎬 Collection API: http://localhost:$apiPort/api/user/{userId}/collection');
       print('🌐 Web App: Running in Chrome browser');
       print('🔄 Services are running. Press Ctrl+C to stop.');
 
@@ -61,7 +61,7 @@ class AppLauncher {
       final port = Platform.environment['PORT'] ?? '3002';
       print('✅ API server started successfully!');
       print('🔍 Health check: http://localhost:$port/health');
-      print('🎬 Collection API: http://localhost:$port/api/collection/{userId}');
+      print('🎬 Collection API: http://localhost:$port/api/user/{userId}/collection');
 
       await _handleShutdown();
 

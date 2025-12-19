@@ -13,7 +13,7 @@ class BluRayScraper {
     try {
       logger.logScraper('Fetching collection data for user: $userId via API');
 
-      final url = Uri.parse('$_apiBaseUrl/api/collection/$userId');
+      final url = Uri.parse('$_apiBaseUrl/api/user/$userId/collection');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {

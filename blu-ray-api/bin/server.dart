@@ -34,7 +34,7 @@ DateTime? _startupTime;
 final _router = Router()
   ..get('/', _rootHandler)
   ..get('/health', _healthHandler)
-  ..get('/api/collection/<userId>', _collectionHandler);
+  ..get('/api/user/<userId>/collection', _collectionHandler);
 
 Response _rootHandler(Request req) {
   return Response.ok('Blu-ray API Server\n');
@@ -120,5 +120,5 @@ void main(List<String> args) async {
   final server = await serve(handler, ip, _config.port);
   print('Blu-ray API Server listening on http://${server.address.host}:${server.port}');
   print('Health check: http://localhost:${server.port}/health');
-  print('Collection API: http://localhost:${server.port}/api/collection/{userId}');
+  print('Collection API: http://localhost:${server.port}/api/user/{userId}/collection');
 }
