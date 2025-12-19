@@ -123,51 +123,131 @@ class BluRayScraper {
     final items = <BluRayItem>[];
 
     // Look for movie entries in search results
-    // Extract from hoverlink anchors with title and cover image
-    final imgPattern = RegExp(
-      r'<a[^>]*class="hoverlink"[^>]*title="([^"]*)"[^>]*>.*?<img[^>]*src="[^"]*covers/(\d+)_[^"]*\.jpg"',
+    // Extract comprehensive movie data from hoverlink anchors
+    final moviePattern = RegExp(
+      r'<a[^>]*class="hoverlink"[^>]*data-globalproductid="([^"]*)"[^>]*data-globalparentid="([^"]*)"[^>]*data-categoryid="([^"]*)"[^>]*data-productid="([^"]*)"[^>]*href="([^"]*)"[^>]*title="([^"]*)"[^>]*>.*?<img[^>]*src="([^"]*covers/(\d+)_[^"]*\.jpg)"',
       multiLine: true,
       caseSensitive: false,
       dotAll: true,
     );
 
-    final imgMatches = imgPattern.allMatches(htmlContent);
-    logScraper('Found ${imgMatches.length} movie images on search page');
+    // Fallback regex for items that might not have all data attributes
+    final fallbackPattern = RegExp(
+      r'<a[^>]*class="hoverlink"[^>]*data-globalproductid="([^"]*)"[^>]*data-productid="([^"]*)"[^>]*href="([^"]*)"[^>]*title="([^"]*)"[^>]*>.*?<img[^>]*src="([^"]*covers/(\d+)_[^"]*\.jpg)"',
+      multiLine: true,
+      caseSensitive: false,
+      dotAll: true,
+    );
 
-    for (final match in imgMatches) {
-      if (match.groupCount >= 2) {
-        final titleWithFormat = match.group(1);
-        final upc = match.group(2);
+    var matches = moviePattern.allMatches(htmlContent).toList();
+    logScraper('Found ${matches.length} movie entries with full regex');
 
-        if (titleWithFormat != null && titleWithFormat.isNotEmpty && upc != null) {
-          // Parse title and format from the title attribute
+    // If no matches with the full regex, try the fallback
+    if (matches.isEmpty) {
+      matches = fallbackPattern.allMatches(htmlContent).toList();
+      logScraper('Found ${matches.length} movie entries with fallback regex');
+    }
+
+    for (final match in matches) {
+      String? globalProductId, globalParentId, categoryId, productId, movieUrl, titleWithFormat, coverImageUrl, upc;
+
+      if (match.groupCount >= 8) {
+        // Full regex match
+        globalProductId = match.group(1);
+        globalParentId = match.group(2);
+        categoryId = match.group(3);
+        productId = match.group(4);
+        movieUrl = match.group(5);
+        titleWithFormat = match.group(6);
+        coverImageUrl = match.group(7);
+        upc = match.group(8); // Extract UPC from image filename
+      } else if (match.groupCount >= 6) {
+        // Fallback regex match
+        globalProductId = match.group(1);
+        productId = match.group(2);
+        movieUrl = match.group(3);
+        titleWithFormat = match.group(4);
+        coverImageUrl = match.group(5);
+        upc = match.group(6);
+        globalParentId = null;
+        categoryId = null;
+      }
+
+      if (titleWithFormat != null && titleWithFormat.isNotEmpty) {
+          // Parse title and year from the title attribute
+          // Format: "Movie Title Format (Year)" e.g., "Top Gun: Maverick 4K (2022)"
           final titleMatch = RegExp(r'^(.+?)\s*\(([^)]+)\)$').firstMatch(titleWithFormat);
           String? title;
+          String? year;
           String? format;
 
           if (titleMatch != null) {
-            title = titleMatch.group(1)?.trim();
-            final formatPart = titleMatch.group(2)?.trim();
-            if (formatPart != null) {
-              if (formatPart.contains('4K')) {
+            final fullTitle = titleMatch.group(1)?.trim();
+            final yearAndFormat = titleMatch.group(2)?.trim();
+
+            if (yearAndFormat != null) {
+              // Extract year from the parentheses content
+              final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(yearAndFormat);
+              if (yearMatch != null) {
+                year = yearMatch.group(0);
+                // Remove year from title if it's at the end
+                if (fullTitle != null && year != null) {
+                  title = fullTitle.replaceAll(RegExp(r'\s*\(?\s*' + year + r'\s*\)?\s*$'), '').trim();
+                } else {
+                  title = fullTitle;
+                }
+              } else {
+                title = fullTitle;
+              }
+
+              // Extract format from the parentheses content
+              if (yearAndFormat.contains('4K')) {
                 format = '4K';
-              } else if (formatPart.contains('Blu-ray') || formatPart.contains('BD')) {
+              } else if (yearAndFormat.contains('Blu-ray') || yearAndFormat.contains('BD')) {
                 format = 'Blu-ray';
-              } else if (formatPart.contains('DVD')) {
+              } else if (yearAndFormat.contains('DVD')) {
                 format = 'DVD';
-              } else if (formatPart.contains('Digital') || formatPart.contains('UV')) {
+              } else if (yearAndFormat.contains('Digital') || yearAndFormat.contains('UV')) {
                 format = 'Digital';
+              }
+            } else {
+              title = fullTitle;
+            }
+
+            // Also check the title part for format indicators
+            if (format == null && title != null) {
+              if (title.contains('4K')) {
+                format = '4K';
+                title = title.replaceAll('4K', '').trim();
+              } else if (title.contains('Blu-ray') || title.contains('BD')) {
+                format = 'Blu-ray';
+                title = title.replaceAll(RegExp(r'\s*Blu-ray|\s*BD'), '').trim();
+              } else if (title.contains('DVD')) {
+                format = 'DVD';
+                title = title.replaceAll('DVD', '').trim();
               }
             }
           } else {
             title = titleWithFormat.trim();
           }
 
-          // Extract year from title if present
-          String? year;
-          final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(title ?? '');
-          if (yearMatch != null) {
-            year = yearMatch.group(0);
+          // If no year found in parentheses, try to extract from title
+          if (year == null && title != null) {
+            final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(title);
+            if (yearMatch != null) {
+              year = yearMatch.group(0);
+            }
+          }
+
+          // Determine format from URL if not found in title
+          if (format == null && movieUrl != null) {
+            if (movieUrl.contains('/4K-')) {
+              format = '4K';
+            } else if (movieUrl.contains('/Blu-ray/') || movieUrl.contains('/BD/')) {
+              format = 'Blu-ray';
+            } else if (movieUrl.contains('/DVD/')) {
+              format = 'DVD';
+            }
           }
 
           final item = BluRayItem(
@@ -175,14 +255,17 @@ class BluRayScraper {
             year: year,
             format: format,
             upc: upc,
-            category: null, // Search results don't have categories
+            movieUrl: movieUrl,
+            coverImageUrl: coverImageUrl,
+            productId: productId,
+            globalProductId: globalProductId,
+            globalParentId: globalParentId,
+            categoryId: categoryId,
           );
 
           items.add(item);
         }
-      }
     }
-
 
     return items;
   }
@@ -271,42 +354,50 @@ class BluRayScraper {
     }
   }
 
-  /// Merges data from printer-friendly and CSV sources
+  /// Merges data from search results and CSV sources
   List<BluRayItem> _mergeCollectionData(
-    List<BluRayItem> printerItems,
+    List<BluRayItem> searchItems,
     List<BluRayItem> csvItems,
   ) {
     final mergedItems = <BluRayItem>[];
 
-    // Create a map for quick lookup of CSV items by title
+    // Create a map for quick lookup of CSV items by UPC or title
     final csvItemMap = <String, BluRayItem>{};
     for (final item in csvItems) {
-      if (item.title != null) {
-        csvItemMap[item.title!.toLowerCase()] = item;
+      // Prefer UPC for matching, fall back to title
+      final key = item.upc ?? item.title?.toLowerCase();
+      if (key != null) {
+        csvItemMap[key] = item;
       }
     }
 
-    // Merge printer-friendly items with CSV data
-    for (final printerItem in printerItems) {
-      if (printerItem.title == null) continue;
-
-      final csvItem = csvItemMap[printerItem.title!.toLowerCase()];
+    // Merge search items with CSV data
+    for (final searchItem in searchItems) {
+      final csvItem = csvItemMap[searchItem.upc ?? searchItem.title?.toLowerCase()];
 
       if (csvItem != null) {
-        // Merge the items, preferring CSV data but keeping category from printer view
-        mergedItems.add(csvItem.copyWith(category: printerItem.category));
+        // Use CSV data but keep search-specific fields
+        mergedItems.add(csvItem.copyWith(
+          movieUrl: searchItem.movieUrl ?? csvItem.movieUrl,
+          coverImageUrl: searchItem.coverImageUrl ?? csvItem.coverImageUrl,
+          productId: searchItem.productId ?? csvItem.productId,
+          globalProductId: searchItem.globalProductId ?? csvItem.globalProductId,
+          globalParentId: searchItem.globalParentId ?? csvItem.globalParentId,
+          categoryId: searchItem.categoryId ?? csvItem.categoryId,
+        ));
       } else {
-        // Only printer data available
-        mergedItems.add(printerItem);
+        // Only search data available
+        mergedItems.add(searchItem);
       }
     }
 
-    // Add any CSV items that weren't in the printer view
+    // Add any CSV items that weren't in the search results
     for (final csvItem in csvItems) {
-      if (csvItem.title == null) continue;
+      final key = csvItem.upc ?? csvItem.title?.toLowerCase();
+      if (key == null) continue;
 
       final existingItem = mergedItems.any(
-        (item) => item.title?.toLowerCase() == csvItem.title!.toLowerCase(),
+        (item) => (item.upc ?? item.title?.toLowerCase()) == key,
       );
 
       if (!existingItem) {

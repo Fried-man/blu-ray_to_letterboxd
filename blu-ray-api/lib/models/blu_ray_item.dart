@@ -8,7 +8,7 @@ class BluRayItem {
   final String? condition;
   final String? dateAdded;
   final String? notes;
-  final String? category; // From printer-friendly view
+  final String? category; // From printer-friendly view or search results
   final String? upc;
   final String? asin;
   final String? imdbId;
@@ -27,6 +27,14 @@ class BluRayItem {
   final String? loanStatus;
   final String? loanTo;
   final String? loanDate;
+
+  // Additional fields from search results
+  final String? movieUrl; // Link to the movie's specific page
+  final String? coverImageUrl; // URL to the movie cover image
+  final String? productId; // Blu-ray.com product ID
+  final String? globalProductId; // Blu-ray.com global product ID
+  final String? globalParentId; // Blu-ray.com global parent ID
+  final String? categoryId; // Blu-ray.com category ID
 
   const BluRayItem({
     this.title,
@@ -56,6 +64,12 @@ class BluRayItem {
     this.loanStatus,
     this.loanTo,
     this.loanDate,
+    this.movieUrl,
+    this.coverImageUrl,
+    this.productId,
+    this.globalProductId,
+    this.globalParentId,
+    this.categoryId,
   });
 
   /// Creates a BluRayItem from a map (useful for CSV parsing)
@@ -88,6 +102,12 @@ class BluRayItem {
       loanStatus: map['Loan Status']?.toString(),
       loanTo: map['Loan To']?.toString(),
       loanDate: map['Loan Date']?.toString(),
+      movieUrl: map['Movie URL']?.toString(),
+      coverImageUrl: map['Cover Image URL']?.toString(),
+      productId: map['Product ID']?.toString(),
+      globalProductId: map['Global Product ID']?.toString(),
+      globalParentId: map['globalParentId']?.toString(),
+      categoryId: map['categoryId']?.toString(),
     );
   }
 
@@ -121,6 +141,12 @@ class BluRayItem {
       'Loan Status': loanStatus,
       'Loan To': loanTo,
       'Loan Date': loanDate,
+      'Movie URL': movieUrl,
+      'Cover Image URL': coverImageUrl,
+      'Product ID': productId,
+      'Global Product ID': globalProductId,
+      'globalParentId': globalParentId,
+      'categoryId': categoryId,
     };
   }
 
@@ -153,6 +179,12 @@ class BluRayItem {
     String? loanStatus,
     String? loanTo,
     String? loanDate,
+    String? movieUrl,
+    String? coverImageUrl,
+    String? productId,
+    String? globalProductId,
+    String? globalParentId,
+    String? categoryId,
   }) {
     return BluRayItem(
       title: title ?? this.title,
@@ -182,6 +214,12 @@ class BluRayItem {
       loanStatus: loanStatus ?? this.loanStatus,
       loanTo: loanTo ?? this.loanTo,
       loanDate: loanDate ?? this.loanDate,
+      movieUrl: movieUrl ?? this.movieUrl,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      productId: productId ?? this.productId,
+      globalProductId: globalProductId ?? this.globalProductId,
+      globalParentId: globalParentId ?? this.globalParentId,
+      categoryId: categoryId ?? this.categoryId,
     );
   }
 
