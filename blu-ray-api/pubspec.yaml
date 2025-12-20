@@ -13,6 +13,8 @@ dependencies:
   http: ^1.2.2
   csv: ^6.0.0
   logger: ^2.3.0
+  blu_ray_shared:
+    path: ../blu-ray-shared
 
 dev_dependencies:
   lints: ^6.0.0

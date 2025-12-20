@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/blu_ray_providers.dart';
-import '../models/blu_ray_item.dart';
+import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 
@@ -21,51 +21,21 @@ void showItemDetails(BuildContext context, BluRayItem item) {
             _buildDetailRow('Year', item.year),
             _buildDetailRow('Format', item.format),
             _buildDetailRow('Category', item.category),
-            _buildDetailRow('Condition', item.condition),
+            _buildDetailRow('Category ID', item.categoryId),
 
             const Divider(),
 
-            // Media Info
-            _buildDetailRow('Director', item.director),
-            _buildDetailRow('Actors', item.actors),
-            _buildDetailRow('Genre', item.genre),
-            _buildDetailRow('Rating', item.rating),
-            _buildDetailRow('Runtime', item.runtime),
-            _buildDetailRow('Studio', item.studio),
-
-            const Divider(),
-
-            // Collection Info
+            // Product Info
             _buildDetailRow('UPC', item.upc),
-            _buildDetailRow('ASIN', item.asin),
-            _buildDetailRow('IMDB ID', item.imdbId),
-            _buildDetailRow('Region', item.region),
-            _buildDetailRow('Edition', item.edition),
+            _buildDetailRow('Product ID', item.productId),
+            _buildDetailRow('Global Product ID', item.globalProductId),
+            _buildDetailRow('Global Parent ID', item.globalParentId),
 
             const Divider(),
 
-            // Status Info
-            _buildDetailRow('Watched', item.watched),
-            _buildDetailRow('Wishlist', item.wishlist),
-            _buildDetailRow('Loan Status', item.loanStatus),
-            _buildDetailRow('Loaned To', item.loanTo),
-            _buildDetailRow('Loan Date', item.loanDate),
-
-            const Divider(),
-
-            // Purchase Info
-            _buildDetailRow('Purchase Date', item.purchaseDate),
-            _buildDetailRow('Price', item.price),
-            _buildDetailRow('Location', item.location),
-            _buildDetailRow('Date Added', item.dateAdded),
-
-            // Notes
-            if (item.notes != null && item.notes!.isNotEmpty) ...[
-              const Divider(),
-              const Text('Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(item.notes!),
-            ],
+            // Links
+            _buildDetailRow('Movie URL', item.movieUrl),
+            _buildDetailRow('Cover Image URL', item.coverImageUrl),
           ],
         ),
       ),
@@ -329,79 +299,13 @@ class CollectionScreen extends ConsumerWidget {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Condition',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(selectedConditionProvider),
-                            items: ref.watch(availableConditionsProvider).map((condition) {
-                              return DropdownMenuItem(
-                                value: condition,
-                                child: Text(condition),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Condition filter changed: "$value"');
-                                ref.read(selectedConditionProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
 
-                    // Second row: Watched, Wishlist, Sort By, Sort Order
+                    // Sort options
                     Row(
                       children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Watched',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(selectedWatchedProvider),
-                            items: ref.watch(availableWatchedProvider).map((watched) {
-                              return DropdownMenuItem(
-                                value: watched,
-                                child: Text(watched),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Watched filter changed: "$value"');
-                                ref.read(selectedWatchedProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Wishlist',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(selectedWishlistProvider),
-                            items: ref.watch(availableWishlistProvider).map((wishlist) {
-                              return DropdownMenuItem(
-                                value: wishlist,
-                                child: Text(wishlist),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Wishlist filter changed: "$value"');
-                                ref.read(selectedWishlistProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             decoration: const InputDecoration(
@@ -514,83 +418,23 @@ class CollectionScreen extends ConsumerWidget {
                     _buildInfoChip(context, item.format!, Icons.album, Colors.blue),
                   if (item.category != null && item.category != 'Uncategorized')
                     _buildInfoChip(context, item.category!, Icons.category, Colors.green),
-                  if (item.condition != null)
-                    _buildInfoChip(context, item.condition!, Icons.inventory, Colors.orange),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 8              ),
 
-              // Director and Rating
-              if (item.director != null || item.rating != null)
-                Row(
-                  children: [
-                    if (item.director != null)
-                      Expanded(
-                        child: Text(
-                          'Director: ${item.director}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    if (item.rating != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          item.rating!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-
-              // Genre and Runtime
-              if (item.genre != null || item.runtime != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    [
-                      if (item.genre != null) 'Genre: ${item.genre}',
-                      if (item.runtime != null) 'Runtime: ${item.runtime}',
-                    ].join(' • '),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              // UPC if available
+              if (item.upc != null)
+                Text(
+                  'UPC: ${item.upc}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
 
-              // Status indicators
+              // Spacer for layout
               const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      if (item.watched == 'Yes')
-                        Icon(Icons.visibility, size: 16, color: Colors.green),
-                      if (item.wishlist == 'Yes')
-                        Icon(Icons.star, size: 16, color: Colors.amber),
-                      if (item.loanStatus != null && item.loanStatus!.isNotEmpty)
-                        Icon(Icons.person, size: 16, color: Colors.blue),
-                    ],
-                  ),
-                  if (item.price != null)
-                    Text(
-                      '\$${item.price}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                ],
-              ),
             ],
           ),
         ),
@@ -637,13 +481,10 @@ class _ResultsSection extends ConsumerWidget {
     final searchQuery = ref.watch(searchQueryProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final selectedFormat = ref.watch(selectedFormatProvider);
-    final selectedCondition = ref.watch(selectedConditionProvider);
-    final selectedWatched = ref.watch(selectedWatchedProvider);
-    final selectedWishlist = ref.watch(selectedWishlistProvider);
     final sortBy = ref.watch(sortByProvider);
     final sortOrder = ref.watch(sortOrderProvider);
 
-    // Apply filters locally instead of using the global provider
+    // Apply filters locally
     var filtered = items;
 
     // Apply category filter
@@ -656,32 +497,16 @@ class _ResultsSection extends ConsumerWidget {
       filtered = filtered.where((item) => item.format == selectedFormat).toList();
     }
 
-    // Apply condition filter
-    if (selectedCondition != 'All') {
-      filtered = filtered.where((item) => item.condition == selectedCondition).toList();
-    }
-
-    // Apply watched filter
-    if (selectedWatched != 'All') {
-      filtered = filtered.where((item) => item.watched == selectedWatched).toList();
-    }
-
-    // Apply wishlist filter
-    if (selectedWishlist != 'All') {
-      filtered = filtered.where((item) => item.wishlist == selectedWishlist).toList();
-    }
-
-    // Apply search filter
+    // Apply search filter - only search in available fields
     if (searchQuery.isNotEmpty) {
       final lowercaseQuery = searchQuery.toLowerCase();
       filtered = filtered.where((item) =>
           (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.director?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.actors?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.genre?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
+          (item.year?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+          (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
     }
 
-    // Apply sorting
+    // Apply sorting - only sort by available fields
     filtered.sort((a, b) {
       int compareResult = 0;
 
@@ -692,17 +517,11 @@ class _ResultsSection extends ConsumerWidget {
         case 'Year':
           compareResult = (a.year ?? '').compareTo(b.year ?? '');
           break;
-        case 'Date Added':
-          compareResult = (a.dateAdded ?? '').compareTo(b.dateAdded ?? '');
+        case 'Format':
+          compareResult = (a.format ?? '').compareTo(b.format ?? '');
           break;
-        case 'Director':
-          compareResult = (a.director ?? '').compareTo(b.director ?? '');
-          break;
-        case 'Rating':
-          compareResult = (a.rating ?? '').compareTo(b.rating ?? '');
-          break;
-        case 'Runtime':
-          compareResult = (a.runtime ?? '').compareTo(b.runtime ?? '');
+        case 'UPC':
+          compareResult = (a.upc ?? '').compareTo(b.upc ?? '');
           break;
         default:
           compareResult = (a.title ?? '').compareTo(b.title ?? '');

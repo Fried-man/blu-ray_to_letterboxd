@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
-import '../models/blu_ray_item.dart';
+import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../utils/logger.dart';
 
 /// Service for scraping Blu-ray collection data from blu-ray.com

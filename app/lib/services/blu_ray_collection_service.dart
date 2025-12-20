@@ -1,5 +1,5 @@
 import 'blu_ray_scraper.dart';
-import '../models/blu_ray_item.dart';
+import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../utils/logger.dart';
 
 /// Service for managing Blu-ray collection data fetching and processing

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/blu_ray_item.dart';
+import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 
@@ -26,12 +26,14 @@ final collectionStateProvider = StateNotifierProvider<CollectionNotifier, AsyncV
 });
 
 /// State for filtering and searching
+/// Note: Only filters that work with API data are enabled
 final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
 final selectedFormatProvider = StateProvider<String>((ref) => 'All');
-final selectedConditionProvider = StateProvider<String>((ref) => 'All');
-final selectedWatchedProvider = StateProvider<String>((ref) => 'All');
-final selectedWishlistProvider = StateProvider<String>((ref) => 'All');
+// Disabled filters - not available in API data
+// final selectedConditionProvider = StateProvider<String>((ref) => 'All');
+// final selectedWatchedProvider = StateProvider<String>((ref) => 'All');
+// final selectedWishlistProvider = StateProvider<String>((ref) => 'All');
 final sortByProvider = StateProvider<String>((ref) => 'Title');
 final sortOrderProvider = StateProvider<String>((ref) => 'Ascending');
 
@@ -41,13 +43,11 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
   final searchQuery = ref.watch(searchQueryProvider);
   final selectedCategory = ref.watch(selectedCategoryProvider);
   final selectedFormat = ref.watch(selectedFormatProvider);
-  final selectedCondition = ref.watch(selectedConditionProvider);
-  final selectedWatched = ref.watch(selectedWatchedProvider);
-  final selectedWishlist = ref.watch(selectedWishlistProvider);
+  // Note: condition, watched, wishlist filters disabled - not in API data
   final sortBy = ref.watch(sortByProvider);
   final sortOrder = ref.watch(sortOrderProvider);
 
-  logger.logState('Computing filtered items with search: "$searchQuery", category: "$selectedCategory", format: "$selectedFormat", condition: "$selectedCondition", watched: "$selectedWatched", wishlist: "$selectedWishlist", sort: "$sortBy $sortOrder"');
+  logger.logState('Computing filtered items with search: "$searchQuery", category: "$selectedCategory", format: "$selectedFormat", sort: "$sortBy $sortOrder"');
 
   return collectionAsync.maybeWhen(
     data: (items) {
@@ -65,32 +65,15 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
         logger.logState('Applied format filter "$selectedFormat": ${filtered.length} items remaining');
       }
 
-      // Apply condition filter
-      if (selectedCondition != 'All') {
-        filtered = filtered.where((item) => item.condition == selectedCondition).toList();
-        logger.logState('Applied condition filter "$selectedCondition": ${filtered.length} items remaining');
-      }
+      // Note: condition, watched, wishlist filters removed - not available in API data
 
-      // Apply watched filter
-      if (selectedWatched != 'All') {
-        filtered = filtered.where((item) => item.watched == selectedWatched).toList();
-        logger.logState('Applied watched filter "$selectedWatched": ${filtered.length} items remaining');
-      }
-
-      // Apply wishlist filter
-      if (selectedWishlist != 'All') {
-        filtered = filtered.where((item) => item.wishlist == selectedWishlist).toList();
-        logger.logState('Applied wishlist filter "$selectedWishlist": ${filtered.length} items remaining');
-      }
-
-      // Apply search filter
+      // Apply search filter - only search in available fields
       if (searchQuery.isNotEmpty) {
         final lowercaseQuery = searchQuery.toLowerCase();
         filtered = filtered.where((item) =>
             (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-            (item.director?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-            (item.actors?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-            (item.genre?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
+            (item.year?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+            (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
         logger.logState('Applied search filter "$searchQuery": ${filtered.length} items remaining');
       }
 
@@ -105,17 +88,11 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
           case 'Year':
             compareResult = (a.year ?? '').compareTo(b.year ?? '');
             break;
-          case 'Date Added':
-            compareResult = (a.dateAdded ?? '').compareTo(b.dateAdded ?? '');
+          case 'Format':
+            compareResult = (a.format ?? '').compareTo(b.format ?? '');
             break;
-          case 'Director':
-            compareResult = (a.director ?? '').compareTo(b.director ?? '');
-            break;
-          case 'Rating':
-            compareResult = (a.rating ?? '').compareTo(b.rating ?? '');
-            break;
-          case 'Runtime':
-            compareResult = (a.runtime ?? '').compareTo(b.runtime ?? '');
+          case 'UPC':
+            compareResult = (a.upc ?? '').compareTo(b.upc ?? '');
             break;
           default:
             compareResult = (a.title ?? '').compareTo(b.title ?? '');
@@ -175,71 +152,18 @@ final availableFormatsProvider = Provider<List<String>>((ref) {
   );
 });
 
-/// Provider for available conditions
-final availableConditionsProvider = Provider<List<String>>((ref) {
-  final collectionAsync = ref.watch(collectionStateProvider);
+// Note: condition, watched, wishlist providers removed - not available in API data
+// Keeping only for reference in case these fields are added later
+// final availableConditionsProvider = Provider<List<String>>((ref) => ['All']);
+// final availableWatchedProvider = Provider<List<String>>((ref) => ['All']);
+// final availableWishlistProvider = Provider<List<String>>((ref) => ['All']);
 
-  return collectionAsync.maybeWhen(
-    data: (items) {
-      final conditions = ['All', ...items
-          .map((item) => item.condition ?? 'Unknown')
-          .where((condition) => condition.isNotEmpty)
-          .toSet()
-          .toList()
-          ..sort()];
-      logger.logState('Available conditions: $conditions');
-      return conditions;
-    },
-    orElse: () => ['All'],
-  );
-});
-
-/// Provider for available watched statuses
-final availableWatchedProvider = Provider<List<String>>((ref) {
-  final collectionAsync = ref.watch(collectionStateProvider);
-
-  return collectionAsync.maybeWhen(
-    data: (items) {
-      final watched = ['All', ...items
-          .map((item) => item.watched ?? 'Unknown')
-          .where((w) => w.isNotEmpty)
-          .toSet()
-          .toList()
-          ..sort()];
-      logger.logState('Available watched statuses: $watched');
-      return watched;
-    },
-    orElse: () => ['All'],
-  );
-});
-
-/// Provider for available wishlist statuses
-final availableWishlistProvider = Provider<List<String>>((ref) {
-  final collectionAsync = ref.watch(collectionStateProvider);
-
-  return collectionAsync.maybeWhen(
-    data: (items) {
-      final wishlist = ['All', ...items
-          .map((item) => item.wishlist ?? 'Unknown')
-          .where((w) => w.isNotEmpty)
-          .toSet()
-          .toList()
-          ..sort()];
-      logger.logState('Available wishlist statuses: $wishlist');
-      return wishlist;
-    },
-    orElse: () => ['All'],
-  );
-});
-
-/// Provider for sort options
+/// Provider for sort options (only available fields from API)
 final sortOptionsProvider = Provider<List<String>>((ref) => [
   'Title',
   'Year',
-  'Date Added',
-  'Director',
-  'Rating',
-  'Runtime',
+  'Format',
+  'UPC',
 ]);
 
 /// Provider for sort order options

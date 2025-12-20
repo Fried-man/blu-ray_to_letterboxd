@@ -1,0 +1,13 @@
+name: blu_ray_shared
+description: Shared models and utilities for Blu-ray collection management
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  # No dependencies needed for the shared model
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0
