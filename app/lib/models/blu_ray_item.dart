@@ -8,8 +8,14 @@ class BluRayItem {
   final String? condition;
   final String? dateAdded;
   final String? notes;
-  final String? category; // From printer-friendly view
+  final String? category; // From printer-friendly view or mapped from categoryId
+  final String? categoryId; // From API response
   final String? upc;
+  final String? movieUrl; // Link to the movie's specific page
+  final String? coverImageUrl; // URL to the movie cover image
+  final String? productId; // Blu-ray.com product ID
+  final String? globalProductId; // Blu-ray.com global product ID
+  final String? globalParentId; // Blu-ray.com global parent ID
   final String? asin;
   final String? imdbId;
   final String? genre;
@@ -38,7 +44,13 @@ class BluRayItem {
     this.dateAdded,
     this.notes,
     this.category,
+    this.categoryId,
     this.upc,
+    this.movieUrl,
+    this.coverImageUrl,
+    this.productId,
+    this.globalProductId,
+    this.globalParentId,
     this.asin,
     this.imdbId,
     this.genre,
@@ -58,8 +70,78 @@ class BluRayItem {
     this.loanDate,
   });
 
-  /// Creates a BluRayItem from a map (useful for CSV parsing)
+  /// Creates a BluRayItem from a map (matches backend API BluRayItem model exactly)
   factory BluRayItem.fromMap(Map<String, dynamic> map) {
+    return BluRayItem(
+      // Fields that exist in backend API response
+      title: map['title']?.toString(),
+      year: map['year']?.toString(),
+      format: map['format']?.toString(),
+      upc: map['upc']?.toString(),
+      movieUrl: map['movieUrl']?.toString(),
+      coverImageUrl: map['coverImageUrl']?.toString(),
+      productId: map['productId']?.toString(),
+      globalProductId: map['globalProductId']?.toString(),
+      globalParentId: map['globalParentId']?.toString(),
+      category: _getCategoryFromId(map['categoryId']?.toString()), // Map categoryId to category name
+      categoryId: map['categoryId']?.toString(),
+
+      // Fields not in API response (will be null)
+      region: null,
+      edition: null,
+      condition: null,
+      dateAdded: null,
+      notes: null,
+      asin: null,
+      imdbId: null,
+      genre: null,
+      director: null,
+      actors: null,
+      runtime: null,
+      rating: null,
+      studio: null,
+      releaseDate: null,
+      purchaseDate: null,
+      price: null,
+      location: null,
+      wishlist: null,
+      watched: null,
+      loanStatus: null,
+      loanTo: null,
+      loanDate: null,
+    );
+  }
+
+static String? _getCategoryFromId(String? categoryId) {
+  if (categoryId == null) return null;
+
+  // Map category IDs to category names based on blu-ray.com categories
+  switch (categoryId) {
+    case '1':
+      return 'Action';
+    case '2':
+      return 'Animation';
+    case '3':
+      return 'Comedy';
+    case '4':
+      return 'Drama';
+    case '5':
+      return 'Horror';
+    case '6':
+      return 'Sci-Fi';
+    case '7':
+      return 'Movies'; // General movies category
+    case '8':
+      return 'TV Shows';
+    case '9':
+      return 'Documentary';
+    default:
+      return 'Movies'; // Default fallback
+  }
+}
+
+/// Creates a BluRayItem from a CSV-style map (keeps the old capitalized version for backward compatibility)
+  factory BluRayItem.fromCsvMap(Map<String, dynamic> map) {
     return BluRayItem(
       title: map['Title']?.toString(),
       year: map['Year']?.toString(),
@@ -70,7 +152,13 @@ class BluRayItem {
       dateAdded: map['Date Added']?.toString(),
       notes: map['Notes']?.toString(),
       category: map['Category']?.toString(),
+      categoryId: map['CategoryId']?.toString(),
       upc: map['UPC']?.toString(),
+      movieUrl: map['MovieUrl']?.toString(),
+      coverImageUrl: map['CoverImageUrl']?.toString(),
+      productId: map['ProductId']?.toString(),
+      globalProductId: map['GlobalProductId']?.toString(),
+      globalParentId: map['GlobalParentId']?.toString(),
       asin: map['ASIN']?.toString(),
       imdbId: map['IMDB ID']?.toString(),
       genre: map['Genre']?.toString(),
@@ -103,7 +191,13 @@ class BluRayItem {
       'Date Added': dateAdded,
       'Notes': notes,
       'Category': category,
+      'CategoryId': categoryId,
       'UPC': upc,
+      'MovieUrl': movieUrl,
+      'CoverImageUrl': coverImageUrl,
+      'ProductId': productId,
+      'GlobalProductId': globalProductId,
+      'GlobalParentId': globalParentId,
       'ASIN': asin,
       'IMDB ID': imdbId,
       'Genre': genre,
@@ -135,7 +229,13 @@ class BluRayItem {
     String? dateAdded,
     String? notes,
     String? category,
+    String? categoryId,
     String? upc,
+    String? movieUrl,
+    String? coverImageUrl,
+    String? productId,
+    String? globalProductId,
+    String? globalParentId,
     String? asin,
     String? imdbId,
     String? genre,
@@ -164,7 +264,13 @@ class BluRayItem {
       dateAdded: dateAdded ?? this.dateAdded,
       notes: notes ?? this.notes,
       category: category ?? this.category,
+      categoryId: categoryId ?? this.categoryId,
       upc: upc ?? this.upc,
+      movieUrl: movieUrl ?? this.movieUrl,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      productId: productId ?? this.productId,
+      globalProductId: globalProductId ?? this.globalProductId,
+      globalParentId: globalParentId ?? this.globalParentId,
       asin: asin ?? this.asin,
       imdbId: imdbId ?? this.imdbId,
       genre: genre ?? this.genre,
@@ -187,7 +293,7 @@ class BluRayItem {
 
   @override
   String toString() {
-    return 'BluRayItem(title: $title, year: $year, format: $format, category: $category)';
+    return 'BluRayItem(title: $title, year: $year, format: $format, category: $category, upc: $upc)';
   }
 
   @override
@@ -197,11 +303,12 @@ class BluRayItem {
         other.title == title &&
         other.year == year &&
         other.format == format &&
-        other.category == category;
+        other.category == category &&
+        other.upc == upc;
   }
 
   @override
   int get hashCode {
-    return title.hashCode ^ year.hashCode ^ format.hashCode ^ category.hashCode;
+    return title.hashCode ^ year.hashCode ^ format.hashCode ^ category.hashCode ^ upc.hashCode;
   }
 }

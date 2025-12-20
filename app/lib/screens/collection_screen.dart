@@ -6,6 +6,99 @@ import '../models/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 
+// Top-level function for showing item details
+void showItemDetails(BuildContext context, BluRayItem item) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(item.title ?? 'Unknown Title'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Basic Info
+            _buildDetailRow('Year', item.year),
+            _buildDetailRow('Format', item.format),
+            _buildDetailRow('Category', item.category),
+            _buildDetailRow('Condition', item.condition),
+
+            const Divider(),
+
+            // Media Info
+            _buildDetailRow('Director', item.director),
+            _buildDetailRow('Actors', item.actors),
+            _buildDetailRow('Genre', item.genre),
+            _buildDetailRow('Rating', item.rating),
+            _buildDetailRow('Runtime', item.runtime),
+            _buildDetailRow('Studio', item.studio),
+
+            const Divider(),
+
+            // Collection Info
+            _buildDetailRow('UPC', item.upc),
+            _buildDetailRow('ASIN', item.asin),
+            _buildDetailRow('IMDB ID', item.imdbId),
+            _buildDetailRow('Region', item.region),
+            _buildDetailRow('Edition', item.edition),
+
+            const Divider(),
+
+            // Status Info
+            _buildDetailRow('Watched', item.watched),
+            _buildDetailRow('Wishlist', item.wishlist),
+            _buildDetailRow('Loan Status', item.loanStatus),
+            _buildDetailRow('Loaned To', item.loanTo),
+            _buildDetailRow('Loan Date', item.loanDate),
+
+            const Divider(),
+
+            // Purchase Info
+            _buildDetailRow('Purchase Date', item.purchaseDate),
+            _buildDetailRow('Price', item.price),
+            _buildDetailRow('Location', item.location),
+            _buildDetailRow('Date Added', item.dateAdded),
+
+            // Notes
+            if (item.notes != null && item.notes!.isNotEmpty) ...[
+              const Divider(),
+              const Text('Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(item.notes!),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildDetailRow(String label, String? value) {
+  if (value == null || value.isEmpty) return const SizedBox.shrink();
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label: ',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Expanded(
+          child: Text(value),
+        ),
+      ],
+    ),
+  );
+}
+
 class CollectionScreen extends ConsumerWidget {
   final String userId;
 
@@ -112,16 +205,9 @@ class CollectionScreen extends ConsumerWidget {
         }
 
         final items = snapshot.data ?? [];
-        final filteredItems = ref.watch(filteredItemsProvider);
         final summary = ref.watch(collectionSummaryProvider);
         final categories = ref.watch(availableCategoriesProvider);
         final formats = ref.watch(availableFormatsProvider);
-
-        final searchQuery = ref.watch(searchQueryProvider);
-        final selectedCategory = ref.watch(selectedCategoryProvider);
-        final selectedFormat = ref.watch(selectedFormatProvider);
-
-        logger.logUI('CollectionScreen displaying ${filteredItems.length} filtered items out of ${items.length} total');
 
         return Scaffold(
       appBar: AppBar(
@@ -194,7 +280,6 @@ class CollectionScreen extends ConsumerWidget {
                         logger.logUI('Search query changed: "$value"');
                         ref.read(searchQueryProvider.notifier).state = value;
                       },
-                      controller: TextEditingController(text: searchQuery),
                     ),
                     const SizedBox(height: 16),
 
@@ -207,7 +292,7 @@ class CollectionScreen extends ConsumerWidget {
                               labelText: 'Category',
                               border: OutlineInputBorder(),
                             ),
-                            value: selectedCategory,
+                            value: ref.watch(selectedCategoryProvider),
                             items: categories.map((category) {
                               return DropdownMenuItem(
                                 value: category,
@@ -229,7 +314,7 @@ class CollectionScreen extends ConsumerWidget {
                               labelText: 'Format',
                               border: OutlineInputBorder(),
                             ),
-                            value: selectedFormat,
+                            value: ref.watch(selectedFormatProvider),
                             items: formats.map((format) {
                               return DropdownMenuItem(
                                 value: format,
@@ -366,36 +451,8 @@ class CollectionScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Results count
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Showing ${filteredItems.length} of ${items.length} items',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-
-              // Collection grid
-              Expanded(
-                child: filteredItems.isEmpty
-                    ? const Center(
-                        child: Text('No items found matching your filters'),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 400,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: filteredItems.length,
-                        itemBuilder: (context, index) {
-                          final item = filteredItems[index];
-                          return _buildItemCard(context, item);
-                        },
-                      ),
-              ),
+              // Results section
+              _ResultsSection(items: items, onItemTap: showItemDetails),
             ],
           ),
         );
@@ -403,13 +460,13 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildItemCard(BuildContext context, BluRayItem item) {
+  static Widget _buildItemCard(BuildContext context, BluRayItem item, void Function(BuildContext, BluRayItem) onItemTap) {
     return Card(
       elevation: 4,
       child: InkWell(
         onTap: () {
           logger.logUI('User tapped item: ${item.title}');
-          _showItemDetails(context, item);
+          onItemTap(context, item);
         },
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -541,7 +598,7 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoChip(BuildContext context, String label, IconData icon, Color color) {
+  static Widget _buildInfoChip(BuildContext context, String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -566,92 +623,128 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
-  void _showItemDetails(BuildContext context, BluRayItem item) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item.title ?? 'Unknown Title'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Basic Info
-              _buildDetailRow('Year', item.year),
-              _buildDetailRow('Format', item.format),
-              _buildDetailRow('Category', item.category),
-              _buildDetailRow('Condition', item.condition),
+}
 
-              const Divider(),
+class _ResultsSection extends ConsumerWidget {
+  final List<BluRayItem> items;
+  final void Function(BuildContext, BluRayItem) onItemTap;
 
-              // Media Info
-              _buildDetailRow('Director', item.director),
-              _buildDetailRow('Actors', item.actors),
-              _buildDetailRow('Genre', item.genre),
-              _buildDetailRow('Rating', item.rating),
-              _buildDetailRow('Runtime', item.runtime),
-              _buildDetailRow('Studio', item.studio),
+  const _ResultsSection({required this.items, required this.onItemTap});
 
-              const Divider(),
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch filter providers
+    final searchQuery = ref.watch(searchQueryProvider);
+    final selectedCategory = ref.watch(selectedCategoryProvider);
+    final selectedFormat = ref.watch(selectedFormatProvider);
+    final selectedCondition = ref.watch(selectedConditionProvider);
+    final selectedWatched = ref.watch(selectedWatchedProvider);
+    final selectedWishlist = ref.watch(selectedWishlistProvider);
+    final sortBy = ref.watch(sortByProvider);
+    final sortOrder = ref.watch(sortOrderProvider);
 
-              // Collection Info
-              _buildDetailRow('UPC', item.upc),
-              _buildDetailRow('ASIN', item.asin),
-              _buildDetailRow('IMDB ID', item.imdbId),
-              _buildDetailRow('Region', item.region),
-              _buildDetailRow('Edition', item.edition),
+    // Apply filters locally instead of using the global provider
+    var filtered = items;
 
-              const Divider(),
+    // Apply category filter
+    if (selectedCategory != 'All') {
+      filtered = filtered.where((item) => item.category == selectedCategory).toList();
+    }
 
-              // Status Info
-              _buildDetailRow('Watched', item.watched),
-              _buildDetailRow('Wishlist', item.wishlist),
-              _buildDetailRow('Loan Status', item.loanStatus),
-              _buildDetailRow('Loaned To', item.loanTo),
-              _buildDetailRow('Loan Date', item.loanDate),
+    // Apply format filter
+    if (selectedFormat != 'All') {
+      filtered = filtered.where((item) => item.format == selectedFormat).toList();
+    }
 
-              const Divider(),
+    // Apply condition filter
+    if (selectedCondition != 'All') {
+      filtered = filtered.where((item) => item.condition == selectedCondition).toList();
+    }
 
-              // Purchase Info
-              _buildDetailRow('Purchase Date', item.purchaseDate),
-              _buildDetailRow('Price', item.price),
-              _buildDetailRow('Location', item.location),
-              _buildDetailRow('Date Added', item.dateAdded),
+    // Apply watched filter
+    if (selectedWatched != 'All') {
+      filtered = filtered.where((item) => item.watched == selectedWatched).toList();
+    }
 
-              // Notes
-              if (item.notes != null && item.notes!.isNotEmpty) ...[
-                const Divider(),
-                const Text('Notes:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(item.notes!),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
+    // Apply wishlist filter
+    if (selectedWishlist != 'All') {
+      filtered = filtered.where((item) => item.wishlist == selectedWishlist).toList();
+    }
 
-  Widget _buildDetailRow(String label, String? value) {
-    if (value == null || value.isEmpty) return const SizedBox.shrink();
+    // Apply search filter
+    if (searchQuery.isNotEmpty) {
+      final lowercaseQuery = searchQuery.toLowerCase();
+      filtered = filtered.where((item) =>
+          (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+          (item.director?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+          (item.actors?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+          (item.genre?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
+    }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // Apply sorting
+    filtered.sort((a, b) {
+      int compareResult = 0;
+
+      switch (sortBy) {
+        case 'Title':
+          compareResult = (a.title ?? '').compareTo(b.title ?? '');
+          break;
+        case 'Year':
+          compareResult = (a.year ?? '').compareTo(b.year ?? '');
+          break;
+        case 'Date Added':
+          compareResult = (a.dateAdded ?? '').compareTo(b.dateAdded ?? '');
+          break;
+        case 'Director':
+          compareResult = (a.director ?? '').compareTo(b.director ?? '');
+          break;
+        case 'Rating':
+          compareResult = (a.rating ?? '').compareTo(b.rating ?? '');
+          break;
+        case 'Runtime':
+          compareResult = (a.runtime ?? '').compareTo(b.runtime ?? '');
+          break;
+        default:
+          compareResult = (a.title ?? '').compareTo(b.title ?? '');
+      }
+
+      return sortOrder == 'Ascending' ? compareResult : -compareResult;
+    });
+
+    logger.logUI('CollectionScreen displaying ${filtered.length} filtered items out of ${items.length} total');
+
+    return Expanded(
+      child: Column(
         children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          // Results count
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Showing ${filtered.length} of ${items.length} items',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
+
+          // Collection grid
           Expanded(
-            child: Text(value),
+            child: filtered.isEmpty
+                ? const Center(
+                    child: Text('No items found matching your filters'),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 400,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final item = filtered[index];
+                      return CollectionScreen._buildItemCard(context, item, onItemTap);
+                    },
+                  ),
           ),
         ],
       ),
