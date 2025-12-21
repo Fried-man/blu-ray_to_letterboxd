@@ -101,6 +101,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 style: TextStyle(fontSize: 18),
               ),
             ),
+            const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerRight,
+              child: InkWell(
+                onTap: () {
+                  logger.logUI('User clicked "My name is Ben" link');
+                  context.go('/user/987553/collection');
+                },
+                child: const Text(
+                  'My name is Ben',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ),
           ],
         ),
       ),
