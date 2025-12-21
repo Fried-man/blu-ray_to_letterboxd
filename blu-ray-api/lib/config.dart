@@ -10,7 +10,7 @@ class ApiConfig {
 
   const ApiConfig({
     this.host = '0.0.0.0',
-    this.port = 3002,
+    this.port = 3003,
     this.requestTimeout = const Duration(seconds: 15),
     this.maxRetries = 3,
     this.enableCors = true,

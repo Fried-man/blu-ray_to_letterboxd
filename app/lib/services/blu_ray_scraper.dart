@@ -5,7 +5,7 @@ import '../utils/logger.dart';
 
 /// Service for scraping Blu-ray collection data from blu-ray.com via Dart API
 class BluRayScraper {
-  static const String _apiBaseUrl = 'http://localhost:3002';
+  static const String _apiBaseUrl = 'http://localhost:3003';
 
 
   /// Fetches collection data from the Dart API

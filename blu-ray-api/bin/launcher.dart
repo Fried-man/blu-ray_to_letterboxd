@@ -9,7 +9,7 @@ class AppLauncher {
   Process? _apiProcess;
   Process? _flutterProcess;
 
-  int apiPort = 3002;
+  int apiPort = 3003;
 
   /// Launch both API server and Flutter web app
   Future<void> launchFullApp() async {
@@ -58,7 +58,7 @@ class AppLauncher {
       await _killExistingApiProcess();
       await _startApiServer();
 
-      final port = Platform.environment['PORT'] ?? '3002';
+      final port = Platform.environment['PORT'] ?? '3003';
       print('✅ API server started successfully!');
       print('🔍 Health check: http://localhost:$port/health');
       print('🎬 Collection API: http://localhost:$port/api/user/{userId}/collection');

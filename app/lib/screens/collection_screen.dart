@@ -6,6 +6,26 @@ import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 
+// Helper function to get year display text
+String? getYearDisplayText(BluRayItem item) {
+  final startYear = item.year;
+  final endYear = item.endYear;
+
+  if (startYear != null && endYear != null && endYear.isNotEmpty && endYear != '-') {
+    // Both years available and end year is not a dash (ongoing)
+    return '$startYear-$endYear';
+  } else if (startYear != null) {
+    // Only start year available
+    return startYear;
+  } else if (endYear != null && endYear.isNotEmpty && endYear != '-') {
+    // Only end year available (unlikely but handle it)
+    return endYear;
+  }
+
+  // No year information available
+  return null;
+}
+
 // Top-level function for showing item details
 void showItemDetails(BuildContext context, BluRayItem item) {
   showDialog(
@@ -18,7 +38,7 @@ void showItemDetails(BuildContext context, BluRayItem item) {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Basic Info
-            _buildDetailRow('Year', item.year),
+            _buildDetailRow('Year', getYearDisplayText(item)),
             _buildDetailRow('Format', item.format),
             _buildDetailRow('Category', item.category),
             _buildDetailRow('Category ID', item.categoryId),
@@ -412,7 +432,7 @@ class CollectionScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (item.year != null)
+                  if (getYearDisplayText(item) != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
@@ -420,7 +440,7 @@ class CollectionScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        item.year!,
+                        getYearDisplayText(item)!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.w500,
