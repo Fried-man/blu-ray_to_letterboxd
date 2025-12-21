@@ -235,121 +235,9 @@ class CollectionScreen extends ConsumerWidget {
           ),
           body: Column(
             children: [
-              // Summary
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Collection Summary',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${items.length} total items',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
 
-              // Filters and Sorting
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Search
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Search',
-                        hintText: 'Search by title, director, actors, or genre...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {
-                        logger.logUI('Search query changed: "$value"');
-                        ref.read(searchQueryProvider.notifier).state = value;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Format filter
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Format',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: ref.watch(selectedFormatProvider),
-                      items: formats.map((format) {
-                        return DropdownMenuItem(
-                          value: format,
-                          child: Text(format),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          logger.logUI('Format filter changed: "$value"');
-                          ref.read(selectedFormatProvider.notifier).state = value;
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Sort options
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Sort By',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(sortByProvider),
-                            items: ref.watch(sortOptionsProvider).map((sortOption) {
-                              return DropdownMenuItem(
-                                value: sortOption,
-                                child: Text(sortOption),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Sort by changed: "$value"');
-                                ref.read(sortByProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Order',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(sortOrderProvider),
-                            items: ref.watch(sortOrderOptionsProvider).map((order) {
-                              return DropdownMenuItem(
-                                value: order,
-                                child: Text(order),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Sort order changed: "$value"');
-                                ref.read(sortOrderProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              // Collapsible Filters and Sorting
+              _CollapsibleFiltersSection(formats: formats),
 
               // Results section
               _ResultsSection(items: items, onItemTap: showItemDetails),
@@ -580,6 +468,131 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
+}
+
+class _CollapsibleFiltersSection extends ConsumerStatefulWidget {
+  final List<String> formats;
+
+  const _CollapsibleFiltersSection({required this.formats});
+
+  @override
+  ConsumerState<_CollapsibleFiltersSection> createState() => _CollapsibleFiltersSectionState();
+}
+
+class _CollapsibleFiltersSectionState extends ConsumerState<_CollapsibleFiltersSection> {
+  bool _isExpanded = false; // Default to closed
+
+  @override
+  Widget build(BuildContext context) {
+    return ExpansionTile(
+      title: Text(
+        'Search & Filters',
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      initiallyExpanded: _isExpanded,
+      onExpansionChanged: (bool expanded) {
+        setState(() {
+          _isExpanded = expanded;
+        });
+      },
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Search
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Search',
+                  hintText: 'Search by title, director, actors, or genre...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onChanged: (value) {
+                  logger.logUI('Search query changed: "$value"');
+                  ref.read(searchQueryProvider.notifier).state = value;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Format filter
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Format',
+                  border: OutlineInputBorder(),
+                ),
+                value: ref.watch(selectedFormatProvider),
+                items: widget.formats.map((format) {
+                  return DropdownMenuItem(
+                    value: format,
+                    child: Text(format),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    logger.logUI('Format filter changed: "$value"');
+                    ref.read(selectedFormatProvider.notifier).state = value;
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Sort options
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Sort By',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: ref.watch(sortByProvider),
+                      items: ref.watch(sortOptionsProvider).map((sortOption) {
+                        return DropdownMenuItem(
+                          value: sortOption,
+                          child: Text(sortOption),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          logger.logUI('Sort by changed: "$value"');
+                          ref.read(sortByProvider.notifier).state = value;
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Order',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: ref.watch(sortOrderProvider),
+                      items: ref.watch(sortOrderOptionsProvider).map((order) {
+                        return DropdownMenuItem(
+                          value: order,
+                          child: Text(order),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          logger.logUI('Sort order changed: "$value"');
+                          ref.read(sortOrderProvider.notifier).state = value;
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _ResultsSection extends ConsumerWidget {
