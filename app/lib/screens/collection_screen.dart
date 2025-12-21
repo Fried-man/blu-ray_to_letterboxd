@@ -7,7 +7,6 @@ import '../providers/blu_ray_providers.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
-import '../utils/format_filter_utils.dart';
 
 // Web-specific import
 import 'dart:html' as html show window;
@@ -209,7 +208,6 @@ class CollectionScreen extends ConsumerWidget {
           );
         }
 
-        final items = snapshot.data ?? [];
         final formats = ref.watch(availableFormatsProvider);
 
         return Scaffold(
@@ -242,7 +240,7 @@ class CollectionScreen extends ConsumerWidget {
               _CollapsibleFiltersSection(formats: formats),
 
               // Results section
-              _ResultsSection(items: items, onItemTap: showItemDetails),
+              _ResultsSection(onItemTap: showItemDetails),
             ],
           ),
         );
@@ -250,148 +248,8 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
-  static Widget _buildItemCard(BuildContext context, BluRayItem item, void Function(BuildContext, BluRayItem) onItemTap) {
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: () {
-          logger.logUI('User tapped item: ${item.title}');
-          onItemTap(context, item);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Cover Image
-              if (item.coverImageUrl != null && item.coverImageUrl!.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  constraints: const BoxConstraints(maxHeight: 200), // Max height constraint
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: _buildCoverImage(item.coverImageUrl!),
-                  ),
-                ),
 
-              // Title
-              Text(
-                item.title ?? 'Unknown Title',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-
-              // Format badges and Year
-              Row(
-                children: [
-                  // Format chips on the left
-                  if (item.format != null && item.format!.isNotEmpty)
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: item.format!.map((format) =>
-                        _buildInfoChip(context, format, Icons.album, Theme.of(context).colorScheme.secondary)
-                      ).toList(),
-                    ),
-
-                  // Expanded spacer
-                  if (item.format != null && item.format!.isNotEmpty && getYearDisplayText(item) != null)
-                    const Spacer(),
-
-                  // Year chip on the right
-                  if (getYearDisplayText(item) != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        getYearDisplayText(item)!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // UPC if available
-              if (item.upc != null)
-                Text(
-                  'UPC: ${item.upc}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-              // Expanded spacer to push content up and button down
-              const Spacer(),
-
-              // Movie URL button if available
-              if (item.movieUrl != null && item.movieUrl!.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      logger.logUI('User tapped movie URL button for: ${item.title}');
-                      final url = item.movieUrl!;
-
-                      try {
-                        if (kIsWeb) {
-                          // Use web-specific URL opening
-                          html.window.open(url, '_blank');
-                        } else {
-                          // Use url_launcher for mobile platforms
-                          final uri = Uri.parse(url);
-                          await launchUrl(uri);
-                        }
-                      } catch (e) {
-                        logger.logUI('Could not launch URL: $url, error: $e');
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Could not open movie page')),
-                          );
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    label: const Text('View on Blu-ray.com'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      textStyle: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static Widget _buildCoverImage(String mediumUrl) {
+  static Widget buildCoverImage(String mediumUrl) {
     // Try to get large version by replacing 'medium' with 'large'
     final largeUrl = mediumUrl.replaceAll('_medium', '_large');
 
@@ -450,7 +308,7 @@ class CollectionScreen extends ConsumerWidget {
     );
   }
 
-  static Widget _buildInfoChip(BuildContext context, String label, IconData icon, Color color) {
+  static Widget buildInfoChip(BuildContext context, String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -603,68 +461,20 @@ class _CollapsibleFiltersSectionState extends ConsumerState<_CollapsibleFiltersS
 }
 
 class _ResultsSection extends ConsumerWidget {
-  final List<BluRayItem> items;
   final void Function(BuildContext, BluRayItem) onItemTap;
 
-  const _ResultsSection({required this.items, required this.onItemTap});
+  const _ResultsSection({required this.onItemTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch filter providers
-    final searchQuery = ref.watch(searchQueryProvider);
-    final selectedFormat = ref.watch(selectedFormatProvider);
-    final sortBy = ref.watch(sortByProvider);
-    final sortOrder = ref.watch(sortOrderProvider);
+    // Use the optimized filtered provider instead of doing expensive work in build
+    final filteredItems = ref.watch(filteredItemsProvider);
+    final totalItems = ref.watch(collectionStateProvider).maybeWhen(
+      data: (items) => items.length,
+      orElse: () => 0,
+    );
 
-    // Apply filters locally
-    var filtered = items;
-
-    // Apply format filter
-    if (selectedFormat != 'All') {
-      filtered = filtered.where((item) {
-        final itemFormats = item.format ?? [];
-        return matchesFormatFilter(itemFormats, selectedFormat);
-      }).toList();
-    }
-
-    // Apply search filter - only search in available fields
-    if (searchQuery.isNotEmpty) {
-      final lowercaseQuery = searchQuery.toLowerCase();
-      filtered = filtered.where((item) =>
-          (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.format?.any((format) => format.toLowerCase().contains(lowercaseQuery)) ?? false)).toList();
-    }
-
-    // Apply sorting - only sort by available fields
-    filtered.sort((a, b) {
-      int compareResult = 0;
-
-      switch (sortBy) {
-        case 'Title':
-          compareResult = (a.title ?? '').compareTo(b.title ?? '');
-          break;
-        case 'Year':
-          compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
-          break;
-        case 'Format':
-          final aFormats = a.format ?? [];
-          final bFormats = b.format ?? [];
-          final aFormatStr = aFormats.join(', ');
-          final bFormatStr = bFormats.join(', ');
-          compareResult = aFormatStr.compareTo(bFormatStr);
-          break;
-        case 'UPC':
-          compareResult = (a.upc ?? BigInt.zero).compareTo(b.upc ?? BigInt.zero);
-          break;
-        default:
-          compareResult = (a.title ?? '').compareTo(b.title ?? '');
-      }
-
-      return sortOrder == 'Ascending' ? compareResult : -compareResult;
-    });
-
-    logger.logUI('CollectionScreen displaying ${filtered.length} filtered items out of ${items.length} total');
+    logger.logUI('CollectionScreen displaying ${filteredItems.length} filtered items out of $totalItems total');
 
     return Expanded(
       child: Column(
@@ -673,33 +483,190 @@ class _ResultsSection extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Showing ${filtered.length} of ${items.length} items',
+              'Showing ${filteredItems.length} of $totalItems items',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
 
-          // Collection grid
+          // Collection grid with optimized performance
           Expanded(
-            child: filtered.isEmpty
+            child: filteredItems.isEmpty
                 ? const Center(
                     child: Text('No items found matching your filters'),
                   )
                 : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 350, // Slightly smaller for better fit
-                      childAspectRatio: 0.8, // Allow more vertical space for natural aspect ratios
+                      maxCrossAxisExtent: 350,
+                      childAspectRatio: 0.8,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
-                    itemCount: filtered.length,
+                    itemCount: filteredItems.length,
+                    // Add item key for better performance
                     itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return CollectionScreen._buildItemCard(context, item, onItemTap);
+                      final item = filteredItems[index];
+                      return _ItemCard(
+                        key: ValueKey(item.productId ?? item.title ?? index),
+                        item: item,
+                        onItemTap: onItemTap,
+                      );
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ItemCard extends StatelessWidget {
+  final BluRayItem item;
+  final void Function(BuildContext, BluRayItem) onItemTap;
+
+  const _ItemCard({
+    super.key,
+    required this.item,
+    required this.onItemTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: InkWell(
+        onTap: () {
+          logger.logUI('User tapped item: ${item.title}');
+          onItemTap(context, item);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cover Image
+              if (item.coverImageUrl != null && item.coverImageUrl!.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CollectionScreen.buildCoverImage(item.coverImageUrl!),
+                  ),
+                ),
+
+              // Title
+              Text(
+                item.title ?? 'Unknown Title',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+
+              // Format badges and Year
+              Row(
+                children: [
+                  // Format chips on the left
+                  if (item.format != null && item.format!.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: item.format!.map((format) =>
+                        CollectionScreen.buildInfoChip(context, format, Icons.album, Theme.of(context).colorScheme.secondary)
+                      ).toList(),
+                    ),
+
+                  // Expanded spacer
+                  if (item.format != null && item.format!.isNotEmpty && getYearDisplayText(item) != null)
+                    const Spacer(),
+
+                  // Year chip on the right
+                  if (getYearDisplayText(item) != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        getYearDisplayText(item)!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+
+              // Expanded spacer to push content up and button down
+              const Spacer(),
+
+              // UPC if available
+              if (item.upc != null)
+                Text(
+                  'UPC: ${item.upc}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+              // Movie URL button if available
+              if (item.movieUrl != null && item.movieUrl!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      logger.logUI('User tapped movie URL button for: ${item.title}');
+                      final url = item.movieUrl!;
+
+                      try {
+                        if (kIsWeb) {
+                          // Use web-specific URL opening
+                          html.window.open(url, '_blank');
+                        } else {
+                          // Use url_launcher for mobile platforms
+                          final uri = Uri.parse(url);
+                          await launchUrl(uri);
+                        }
+                      } catch (e) {
+                        logger.logUI('Could not launch URL: $url, error: $e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not open movie page')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('View on Blu-ray.com'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
