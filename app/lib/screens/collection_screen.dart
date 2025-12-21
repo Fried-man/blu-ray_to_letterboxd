@@ -380,9 +380,9 @@ class CollectionScreen extends ConsumerWidget {
               // Cover Image
               if (item.coverImageUrl != null && item.coverImageUrl!.isNotEmpty)
                 Container(
-                  height: 120,
                   width: double.infinity,
                   margin: const EdgeInsets.only(bottom: 8),
+                  constraints: const BoxConstraints(maxHeight: 200), // Max height constraint
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
@@ -395,34 +395,7 @@ class CollectionScreen extends ConsumerWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      item.coverImageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          child: Icon(
-                            Icons.movie,
-                            size: 48,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    child: _buildCoverImage(item.coverImageUrl!),
                   ),
                 ),
 
@@ -488,6 +461,65 @@ class CollectionScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  static Widget _buildCoverImage(String mediumUrl) {
+    // Try to get large version by replacing 'medium' with 'large'
+    final largeUrl = mediumUrl.replaceAll('_medium', '_large');
+
+    return Image.network(
+      largeUrl,
+      fit: BoxFit.contain, // Use contain to maintain aspect ratio
+      errorBuilder: (context, error, stackTrace) {
+        // If large fails, try medium
+        return Image.network(
+          mediumUrl,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            // If both fail, show fallback
+            return Container(
+              height: 150, // Fallback height
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              child: Icon(
+                Icons.movie,
+                size: 48,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              height: 150,
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          height: 150,
+          color: Theme.of(context).colorScheme.surfaceVariant,
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -602,8 +634,8 @@ class _ResultsSection extends ConsumerWidget {
                 : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 400,
-                      childAspectRatio: 1.0, // Adjusted for cover images
+                      maxCrossAxisExtent: 350, // Slightly smaller for better fit
+                      childAspectRatio: 0.8, // Allow more vertical space for natural aspect ratios
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
