@@ -72,7 +72,7 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
         final lowercaseQuery = searchQuery.toLowerCase();
         filtered = filtered.where((item) =>
             (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-            (item.year?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+            (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
             (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
         logger.logState('Applied search filter "$searchQuery": ${filtered.length} items remaining');
       }
@@ -86,13 +86,15 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
             compareResult = (a.title ?? '').compareTo(b.title ?? '');
             break;
           case 'Year':
-            compareResult = (a.year ?? '').compareTo(b.year ?? '');
+            // Numeric sorting for years (already int type)
+            compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
             break;
           case 'Format':
             compareResult = (a.format ?? '').compareTo(b.format ?? '');
             break;
           case 'UPC':
-            compareResult = (a.upc ?? '').compareTo(b.upc ?? '');
+            // Numeric sorting for UPC (already BigInt type)
+            compareResult = (a.upc ?? BigInt.zero).compareTo(b.upc ?? BigInt.zero);
             break;
           default:
             compareResult = (a.title ?? '').compareTo(b.title ?? '');

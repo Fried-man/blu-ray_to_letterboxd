@@ -85,7 +85,7 @@ Future<Response> _collectionHandler(Request request) async {
       jsonEncode({
         'userId': userId,
         'count': items.length,
-        'items': items.map((item) => item.toMap()).toList(),
+        'items': items.map((item) => item.toJson()).toList(),
       }),
       headers: {'content-type': 'application/json'},
     );

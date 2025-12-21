@@ -13,9 +13,14 @@ dependencies:
   http: ^1.2.2
   csv: ^6.0.0
   logger: ^2.3.0
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
   blu_ray_shared:
     path: ../blu-ray-shared
 
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.25.6
+  freezed: ^2.4.2
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.6

@@ -19,7 +19,7 @@ class BluRayScraper {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
         final items = (data['items'] as List<dynamic>?)
-            ?.map((item) => BluRayItem.fromMap(item as Map<String, dynamic>))
+            ?.map((item) => BluRayItem.fromJson(item as Map<String, dynamic>))
             .toList() ?? [];
 
         logger.logScraper('Successfully fetched ${items.length} items from API');

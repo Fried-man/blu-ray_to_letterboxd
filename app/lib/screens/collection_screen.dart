@@ -16,15 +16,15 @@ String? getYearDisplayText(BluRayItem item) {
   final startYear = item.year;
   final endYear = item.endYear;
 
-  if (startYear != null && endYear != null && endYear.isNotEmpty && endYear != '-') {
-    // Both years available and end year is not a dash (ongoing)
+  if (startYear != null && endYear != null) {
+    // Both years available - show range
     return '$startYear-$endYear';
   } else if (startYear != null) {
     // Only start year available
-    return startYear;
-  } else if (endYear != null && endYear.isNotEmpty && endYear != '-') {
+    return startYear.toString();
+  } else if (endYear != null) {
     // Only end year available (unlikely but handle it)
-    return endYear;
+    return endYear.toString();
   }
 
   // No year information available
@@ -51,7 +51,7 @@ void showItemDetails(BuildContext context, BluRayItem item) {
             const Divider(),
 
             // Product Info
-            _buildDetailRow('UPC', item.upc),
+            _buildDetailRow('UPC', item.upc?.toString()),
             _buildDetailRow('Product ID', item.productId),
             _buildDetailRow('Global Product ID', item.globalProductId),
             _buildDetailRow('Global Parent ID', item.globalParentId),
@@ -646,7 +646,7 @@ class _ResultsSection extends ConsumerWidget {
       final lowercaseQuery = searchQuery.toLowerCase();
       filtered = filtered.where((item) =>
           (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.year?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+          (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
           (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
     }
 
@@ -659,13 +659,13 @@ class _ResultsSection extends ConsumerWidget {
           compareResult = (a.title ?? '').compareTo(b.title ?? '');
           break;
         case 'Year':
-          compareResult = (a.year ?? '').compareTo(b.year ?? '');
+          compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
           break;
         case 'Format':
           compareResult = (a.format ?? '').compareTo(b.format ?? '');
           break;
         case 'UPC':
-          compareResult = (a.upc ?? '').compareTo(b.upc ?? '');
+          compareResult = (a.upc ?? BigInt.zero).compareTo(b.upc ?? BigInt.zero);
           break;
         default:
           compareResult = (a.title ?? '').compareTo(b.title ?? '');

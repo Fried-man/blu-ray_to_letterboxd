@@ -1,11 +1,9 @@
 import 'package:http/http.dart' as http;
-import 'package:csv/csv.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../utils/logger.dart';
 
 /// Service for scraping Blu-ray collection data from blu-ray.com
 class BluRayScraper {
-  static const String _baseUrl = 'https://www.blu-ray.com/community/collection.php';
 
   // Browser-like headers
   static const Map<String, String> _headers = {
@@ -31,20 +29,9 @@ class BluRayScraper {
   Future<List<BluRayItem>> fetchCollection(String userId) async {
     try {
       // Use the public search endpoint to get collection data
+      // CSV export appears to be disabled by Blu-ray.com, so we rely on search results
       final collectionItems = await _fetchFromSearchEndpoint(userId);
-
-      if (collectionItems.isNotEmpty) {
-        // Try to enhance with CSV data if available
-        try {
-          final csvItems = await _fetchCsvData(userId);
-          if (csvItems.isNotEmpty) {
-            return _mergeCollectionData(collectionItems, csvItems);
-          }
-        } catch (csvError) {
-          // CSV failed, but we have search data - continue with that
-          logScraper('Warning: CSV data not available, using search results only');
-        }
-      }
+      logScraper('Successfully fetched ${collectionItems.length} items from search results');
 
       return collectionItems;
     } catch (e) {
@@ -58,7 +45,7 @@ class BluRayScraper {
 
     final allItems = <BluRayItem>[];
     var page = 0; // Start at page 0 as requested
-    final seenUpcs = <String>{}; // Track UPCs to avoid duplicates
+    final seenUpcs = <BigInt>{}; // Track UPCs to avoid duplicates
 
     while (true) { // Continue until no more pages
       try {
@@ -75,7 +62,7 @@ class BluRayScraper {
 
         // Only add items we haven't seen before (based on UPC)
         for (final item in pageItems) {
-          if (item.upc != null && !seenUpcs.contains(item.upc)) {
+          if (item.upc != null && !seenUpcs.contains(item.upc!)) {
             seenUpcs.add(item.upc!);
             allItems.add(item);
             newItemsCount++;
@@ -213,7 +200,7 @@ class BluRayScraper {
               if (fullTitle != null && (year != null || endYear != null)) {
                 String yearPattern = '';
                 if (year != null && endYear != null) {
-                  yearPattern = r'\s*\(?\s*' + year + r'\s*-\s*' + (endYear == '-' ? r'-' : endYear!) + r'\s*\)?\s*$';
+                  yearPattern = r'\s*\(?\s*' + year + r'\s*-\s*' + (endYear == '-' ? r'-' : endYear) + r'\s*\)?\s*$';
                 } else if (year != null) {
                   yearPattern = r'\s*\(?\s*' + year + r'\s*\)?\s*$';
                 }
@@ -278,10 +265,10 @@ class BluRayScraper {
 
           final item = BluRayItem(
             title: title,
-            year: year,
-            endYear: endYear,
+            year: year != null ? int.tryParse(year) : null,
+            endYear: endYear != null && endYear != '-' ? int.tryParse(endYear) : null,
             format: format,
-            upc: upc,
+            upc: upc != null ? BigInt.tryParse(upc) : null,
             movieUrl: movieUrl,
             coverImageUrl: coverImageUrl,
             productId: productId,
@@ -299,141 +286,6 @@ class BluRayScraper {
 
 
 
-  /// Fetches data from the CSV export URL
-  Future<List<BluRayItem>> _fetchCsvData(String userId) async {
-    final url = '$_baseUrl?u=$userId&action=exportcsv';
-
-    logScraper('Attempting to fetch CSV data for user: $userId');
-
-    try {
-      final response = await _client.get(
-        Uri.parse(url),
-        headers: {..._headers, 'Accept': 'text/csv,application/csv,text/plain,*/*'},
-      );
-
-      final csvContent = response.body;
-
-      logScraper('Received CSV response, length: ${csvContent.length}');
-
-      // Check if we got valid CSV data or HTML error page
-      if (csvContent.trim().isEmpty || csvContent.contains('<!DOCTYPE html')) {
-        logScraper('Invalid CSV response - received HTML instead of CSV');
-        throw Exception('Invalid CSV response received - got HTML page instead');
-      }
-
-      // Check if we got blocked or need login
-      if (csvContent.contains('No index') || csvContent.contains('Access Denied') || csvContent.contains('logged in')) {
-        logScraper('CSV access blocked - collection requires login or is private');
-        throw Exception('Access blocked. The collection requires login or is private.');
-      }
-
-      final items = _parseCsvData(csvContent);
-      logScraper('Successfully parsed ${items.length} items from CSV data');
-
-      return items;
-    } catch (e) {
-      logScraper('CSV fetch failed or returned invalid data', error: e);
-      throw Exception('CSV data not available: $e');
-    }
-  }
-
-
-  /// Parses CSV data into BluRayItem objects
-  List<BluRayItem> _parseCsvData(String csvContent) {
-    try {
-      // Parse CSV with flexible settings
-      final csvData = const CsvToListConverter(
-        eol: '\n',
-        fieldDelimiter: ',',
-        shouldParseNumbers: false,
-      ).convert(csvContent);
-
-      if (csvData.isEmpty) return [];
-
-      // First row should contain headers
-      final headers = csvData[0].map((header) => header.toString().trim()).toList();
-
-      final items = <BluRayItem>[];
-
-      // Process data rows
-      for (var i = 1; i < csvData.length; i++) {
-        final row = csvData[i];
-        if (row.isEmpty || row.every((cell) => cell.toString().trim().isEmpty)) continue;
-
-        final itemMap = <String, dynamic>{};
-
-        // Map CSV columns to our data structure
-        for (var j = 0; j < headers.length && j < row.length; j++) {
-          final header = headers[j];
-          final value = row[j]?.toString().trim();
-          if (value != null && value.isNotEmpty) {
-            itemMap[header] = value;
-          }
-        }
-
-        final item = BluRayItem.fromMap(itemMap);
-        items.add(item);
-      }
-
-      return items;
-    } catch (e) {
-      throw Exception('Failed to parse CSV data: $e');
-    }
-  }
-
-  /// Merges data from search results and CSV sources
-  List<BluRayItem> _mergeCollectionData(
-    List<BluRayItem> searchItems,
-    List<BluRayItem> csvItems,
-  ) {
-    final mergedItems = <BluRayItem>[];
-
-    // Create a map for quick lookup of CSV items by UPC or title
-    final csvItemMap = <String, BluRayItem>{};
-    for (final item in csvItems) {
-      // Prefer UPC for matching, fall back to title
-      final key = item.upc ?? item.title?.toLowerCase();
-      if (key != null) {
-        csvItemMap[key] = item;
-      }
-    }
-
-    // Merge search items with CSV data
-    for (final searchItem in searchItems) {
-      final csvItem = csvItemMap[searchItem.upc ?? searchItem.title?.toLowerCase()];
-
-      if (csvItem != null) {
-        // Use CSV data but keep search-specific fields
-        mergedItems.add(csvItem.copyWith(
-          movieUrl: searchItem.movieUrl ?? csvItem.movieUrl,
-          coverImageUrl: searchItem.coverImageUrl ?? csvItem.coverImageUrl,
-          productId: searchItem.productId ?? csvItem.productId,
-          globalProductId: searchItem.globalProductId ?? csvItem.globalProductId,
-          globalParentId: searchItem.globalParentId ?? csvItem.globalParentId,
-          categoryId: searchItem.categoryId ?? csvItem.categoryId,
-        ));
-      } else {
-        // Only search data available
-        mergedItems.add(searchItem);
-      }
-    }
-
-    // Add any CSV items that weren't in the search results
-    for (final csvItem in csvItems) {
-      final key = csvItem.upc ?? csvItem.title?.toLowerCase();
-      if (key == null) continue;
-
-      final existingItem = mergedItems.any(
-        (item) => (item.upc ?? item.title?.toLowerCase()) == key,
-      );
-
-      if (!existingItem) {
-        mergedItems.add(csvItem);
-      }
-    }
-
-    return mergedItems;
-  }
 
   /// Cleans HTML tags and entities from text
   String cleanHtml(String html) {
