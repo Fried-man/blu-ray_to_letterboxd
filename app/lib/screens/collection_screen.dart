@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../providers/blu_ray_providers.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
+
+// Web-specific import
+import 'dart:html' as html show window;
 
 // Helper function to get year display text
 String? getYearDisplayText(BluRayItem item) {
@@ -474,6 +479,44 @@ class CollectionScreen extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+
+              // Movie URL button if available
+              if (item.movieUrl != null && item.movieUrl!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      logger.logUI('User tapped movie URL button for: ${item.title}');
+                      final url = item.movieUrl!;
+
+                      try {
+                        if (kIsWeb) {
+                          // Use web-specific URL opening
+                          html.window.open(url, '_blank');
+                        } else {
+                          // Use url_launcher for mobile platforms
+                          final uri = Uri.parse(url);
+                          await launchUrl(uri);
+                        }
+                      } catch (e) {
+                        logger.logUI('Could not launch URL: $url, error: $e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Could not open movie page')),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('View on Blu-ray.com'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ],
 
               // Spacer for layout
               const Spacer(),
