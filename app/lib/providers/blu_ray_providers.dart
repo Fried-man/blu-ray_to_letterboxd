@@ -197,6 +197,12 @@ class CollectionNotifier extends StateNotifier<AsyncValue<List<BluRayItem>>> {
     }
   }
 
+  /// Load cached collection data
+  void loadCachedCollection(AsyncValue<List<BluRayItem>> cachedData) {
+    logger.logState('CollectionNotifier: Loading cached collection data');
+    state = cachedData;
+  }
+
   /// Clear the current collection
   void clearCollection() {
     logger.logState('CollectionNotifier: Clearing collection');

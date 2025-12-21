@@ -106,6 +106,8 @@ class CollectionScreen extends ConsumerWidget {
 
     if (cachedData != null && cachedData.hasValue && !cachedData.isRefreshing) {
       logger.logUI('Using cached collection data for user $userId');
+      // Populate the state provider with cached data
+      ref.read(collectionStateProvider.notifier).loadCachedCollection(cachedData);
       return cachedData.value!;
     }
 
@@ -114,12 +116,18 @@ class CollectionScreen extends ConsumerWidget {
 
     try {
       final items = await service.fetchCollection(userId);
+      // Populate the state provider with the fetched data
+      final AsyncValue<List<BluRayItem>> asyncData = AsyncValue.data(items);
+      ref.read(collectionStateProvider.notifier).loadCachedCollection(asyncData);
       // Cache the successful result
-      ref.read(collectionCacheProvider.notifier).cacheCollection(userId, AsyncValue.data(items));
+      ref.read(collectionCacheProvider.notifier).cacheCollection(userId, asyncData);
       return items;
     } catch (error, stackTrace) {
+      // Populate the state provider with the error
+      final AsyncValue<List<BluRayItem>> asyncError = AsyncValue.error(error, stackTrace);
+      ref.read(collectionStateProvider.notifier).loadCachedCollection(asyncError);
       // Cache the error too to avoid repeated failed requests
-      ref.read(collectionCacheProvider.notifier).cacheCollection(userId, AsyncValue.error(error, stackTrace));
+      ref.read(collectionCacheProvider.notifier).cacheCollection(userId, asyncError);
       rethrow;
     }
   }
@@ -205,29 +213,29 @@ class CollectionScreen extends ConsumerWidget {
         final formats = ref.watch(availableFormatsProvider);
 
         return Scaffold(
-      appBar: AppBar(
-        title: Text('Collection - User $userId'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              logger.logUI('User tapped refresh button for user $userId');
-              ref.read(collectionStateProvider.notifier).fetchCollection(userId);
-            },
-            tooltip: 'Refresh Collection',
+          appBar: AppBar(
+            title: Text('Collection - User $userId'),
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  logger.logUI('User tapped refresh button for user $userId');
+                  ref.read(collectionStateProvider.notifier).fetchCollection(userId);
+                },
+                tooltip: 'Refresh Collection',
+              ),
+              IconButton(
+                icon: const Icon(Icons.home),
+                onPressed: () {
+                  logger.logUI('User tapped home button');
+                  context.go('/');
+                },
+                tooltip: 'Home',
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.home),
-            onPressed: () {
-              logger.logUI('User tapped home button');
-              context.go('/');
-            },
-            tooltip: 'Home',
-          ),
-        ],
-      ),
-      body: Column(
+          body: Column(
             children: [
               // Summary
               Container(
@@ -633,12 +641,12 @@ class _ResultsSection extends ConsumerWidget {
 
     // Apply category filter
     if (selectedCategory != 'All') {
-      filtered = filtered.where((item) => item.category == selectedCategory).toList();
+      filtered = filtered.where((item) => (item.category ?? 'Uncategorized') == selectedCategory).toList();
     }
 
     // Apply format filter
     if (selectedFormat != 'All') {
-      filtered = filtered.where((item) => item.format == selectedFormat).toList();
+      filtered = filtered.where((item) => (item.format ?? 'Unknown') == selectedFormat).toList();
     }
 
     // Apply search filter - only search in available fields
