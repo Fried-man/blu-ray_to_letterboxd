@@ -53,7 +53,7 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
 
       // Apply format filter
       if (selectedFormat != 'All') {
-        filtered = filtered.where((item) => item.format == selectedFormat).toList();
+        filtered = filtered.where((item) => (item.format ?? []).contains(selectedFormat)).toList();
         logger.logState('Applied format filter "$selectedFormat": ${filtered.length} items remaining');
       }
 
@@ -65,7 +65,7 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
         filtered = filtered.where((item) =>
             (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
             (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
-            (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
+            (item.format?.any((format) => format.toLowerCase().contains(lowercaseQuery)) ?? false)).toList();
         logger.logState('Applied search filter "$searchQuery": ${filtered.length} items remaining');
       }
 
@@ -82,7 +82,11 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
             compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
             break;
           case 'Format':
-            compareResult = (a.format ?? '').compareTo(b.format ?? '');
+            final aFormats = a.format ?? [];
+            final bFormats = b.format ?? [];
+            final aFormatStr = aFormats.join(', ');
+            final bFormatStr = bFormats.join(', ');
+            compareResult = aFormatStr.compareTo(bFormatStr);
             break;
           case 'UPC':
             // Numeric sorting for UPC (already BigInt type)
@@ -107,12 +111,14 @@ final availableFormatsProvider = Provider<List<String>>((ref) {
 
   return collectionAsync.maybeWhen(
     data: (items) {
-      final formats = ['All', ...items
-          .map((item) => item.format ?? 'Unknown')
-          .where((format) => format.isNotEmpty)
-          .toSet()
-          .toList()
-          ..sort()];
+      final allFormats = <String>{};
+      for (final item in items) {
+        if (item.format != null) {
+          allFormats.addAll(item.format!);
+        }
+      }
+
+      final formats = ['All', ...allFormats.toList()..sort()];
       logger.logState('Available formats: $formats');
       return formats;
     },

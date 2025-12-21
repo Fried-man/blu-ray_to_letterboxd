@@ -44,7 +44,7 @@ void showItemDetails(BuildContext context, BluRayItem item) {
           children: [
             // Basic Info
             _buildDetailRow('Year', getYearDisplayText(item)),
-            _buildDetailRow('Format', item.format),
+            _buildDetailRow('Format', item.format?.join(', ')),
             _buildDetailRow('Category ID', item.categoryId),
 
             const Divider(),
@@ -426,9 +426,15 @@ class CollectionScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              // Format badge
-              if (item.format != null)
-                _buildInfoChip(context, item.format!, Icons.album, Colors.blue),
+              // Format badges
+              if (item.format != null && item.format!.isNotEmpty)
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: item.format!.map((format) =>
+                    _buildInfoChip(context, format, Icons.album, Colors.blue)
+                  ).toList(),
+                ),
               const SizedBox(height: 8),
 
               // UPC if available
@@ -594,7 +600,7 @@ class _ResultsSection extends ConsumerWidget {
 
     // Apply format filter
     if (selectedFormat != 'All') {
-      filtered = filtered.where((item) => (item.format ?? 'Unknown') == selectedFormat).toList();
+      filtered = filtered.where((item) => (item.format ?? []).contains(selectedFormat)).toList();
     }
 
     // Apply search filter - only search in available fields
@@ -603,7 +609,7 @@ class _ResultsSection extends ConsumerWidget {
       filtered = filtered.where((item) =>
           (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
           (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
-          (item.format?.toLowerCase().contains(lowercaseQuery) ?? false)).toList();
+          (item.format?.any((format) => format.toLowerCase().contains(lowercaseQuery)) ?? false)).toList();
     }
 
     // Apply sorting - only sort by available fields
@@ -618,7 +624,11 @@ class _ResultsSection extends ConsumerWidget {
           compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
           break;
         case 'Format':
-          compareResult = (a.format ?? '').compareTo(b.format ?? '');
+          final aFormats = a.format ?? [];
+          final bFormats = b.format ?? [];
+          final aFormatStr = aFormats.join(', ');
+          final bFormatStr = bFormats.join(', ');
+          compareResult = aFormatStr.compareTo(bFormatStr);
           break;
         case 'UPC':
           compareResult = (a.upc ?? BigInt.zero).compareTo(b.upc ?? BigInt.zero);

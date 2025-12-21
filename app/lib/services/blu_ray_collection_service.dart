@@ -47,7 +47,7 @@ class BluRayCollectionService {
     if (format == 'All' || format.isEmpty) {
       return items;
     }
-    return items.where((item) => item.format == format).toList();
+    return items.where((item) => (item.format ?? []).contains(format)).toList();
   }
 
   /// Searches items by title
@@ -61,12 +61,13 @@ class BluRayCollectionService {
 
   /// Gets all unique formats from the collection
   List<String> getFormats(List<BluRayItem> items) {
-    final formats = items
-        .map((item) => item.format ?? 'Unknown')
-        .where((format) => format.isNotEmpty)
-        .toSet()
-        .toList();
-    formats.sort();
+    final allFormats = <String>{};
+    for (final item in items) {
+      if (item.format != null) {
+        allFormats.addAll(item.format!);
+      }
+    }
+    final formats = allFormats.toList()..sort();
     return formats;
   }
 }

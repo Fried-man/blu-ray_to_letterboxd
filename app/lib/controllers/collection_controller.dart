@@ -10,7 +10,7 @@ class CollectionController {
     return items.where((item) =>
         (item.title?.toLowerCase().contains(lowercaseQuery) ?? false) ||
         (item.year?.toString().toLowerCase().contains(lowercaseQuery) ?? false) ||
-        (item.format?.toLowerCase().contains(lowercaseQuery) ?? false) ||
+        (item.format?.any((format) => format.toLowerCase().contains(lowercaseQuery)) ?? false) ||
         (item.upc?.toString().toLowerCase().contains(lowercaseQuery) ?? false)).toList();
   }
 
@@ -28,7 +28,11 @@ class CollectionController {
           compareResult = (a.year ?? 0).compareTo(b.year ?? 0);
           break;
         case 'Format':
-          compareResult = (a.format ?? '').compareTo(b.format ?? '');
+          final aFormats = a.format ?? [];
+          final bFormats = b.format ?? [];
+          final aFormatStr = aFormats.join(', ');
+          final bFormatStr = bFormats.join(', ');
+          compareResult = aFormatStr.compareTo(bFormatStr);
           break;
         case 'UPC':
           compareResult = (a.upc ?? BigInt.zero).compareTo(b.upc ?? BigInt.zero);
@@ -45,11 +49,12 @@ class CollectionController {
 
   /// Gets unique formats from items
   List<String> getFormats(List<BluRayItem> items) {
-    return ['All', ...items
-        .map((item) => item.format ?? 'Unknown')
-        .where((format) => format.isNotEmpty)
-        .toSet()
-        .toList()
-        ..sort()];
+    final allFormats = <String>{};
+    for (final item in items) {
+      if (item.format != null) {
+        allFormats.addAll(item.format!);
+      }
+    }
+    return ['All', ...allFormats.toList()..sort()];
   }
 }

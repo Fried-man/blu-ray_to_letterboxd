@@ -10,7 +10,8 @@ _$BluRayItemImpl _$$BluRayItemImplFromJson(Map<String, dynamic> json) =>
     _$BluRayItemImpl(
       title: json['title'] as String?,
       year: (json['year'] as num?)?.toInt(),
-      format: json['format'] as String?,
+      format:
+          (json['format'] as List<dynamic>?)?.map((e) => e as String).toList(),
       upc: json['upc'] == null ? null : BigInt.parse(json['upc'] as String),
       movieUrl: json['movieUrl'] as String?,
       coverImageUrl: json['coverImageUrl'] as String?,

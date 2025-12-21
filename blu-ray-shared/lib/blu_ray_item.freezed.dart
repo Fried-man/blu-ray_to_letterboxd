@@ -26,8 +26,8 @@ mixin _$BluRayItem {
   /// The release year as an integer
   int? get year => throw _privateConstructorUsedError;
 
-  /// Format type (Blu-ray, DVD, 4K, etc.)
-  String? get format => throw _privateConstructorUsedError;
+  /// Format types (Blu-ray, DVD, 4K, etc.) - derived from URL
+  List<String>? get format => throw _privateConstructorUsedError;
 
   /// Universal Product Code as a BigInt for proper numeric handling
   BigInt? get upc => throw _privateConstructorUsedError;
@@ -72,7 +72,7 @@ abstract class $BluRayItemCopyWith<$Res> {
   $Res call(
       {String? title,
       int? year,
-      String? format,
+      List<String>? format,
       BigInt? upc,
       String? movieUrl,
       String? coverImageUrl,
@@ -122,7 +122,7 @@ class _$BluRayItemCopyWithImpl<$Res, $Val extends BluRayItem>
       format: freezed == format
           ? _value.format
           : format // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as List<String>?,
       upc: freezed == upc
           ? _value.upc
           : upc // ignore: cast_nullable_to_non_nullable
@@ -170,7 +170,7 @@ abstract class _$$BluRayItemImplCopyWith<$Res>
   $Res call(
       {String? title,
       int? year,
-      String? format,
+      List<String>? format,
       BigInt? upc,
       String? movieUrl,
       String? coverImageUrl,
@@ -216,9 +216,9 @@ class __$$BluRayItemImplCopyWithImpl<$Res>
           : year // ignore: cast_nullable_to_non_nullable
               as int?,
       format: freezed == format
-          ? _value.format
+          ? _value._format
           : format // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as List<String>?,
       upc: freezed == upc
           ? _value.upc
           : upc // ignore: cast_nullable_to_non_nullable
@@ -261,7 +261,7 @@ class _$BluRayItemImpl extends _BluRayItem {
   const _$BluRayItemImpl(
       {this.title,
       this.year,
-      this.format,
+      final List<String>? format,
       this.upc,
       this.movieUrl,
       this.coverImageUrl,
@@ -270,7 +270,8 @@ class _$BluRayItemImpl extends _BluRayItem {
       this.globalParentId,
       this.categoryId,
       this.endYear})
-      : super._();
+      : _format = format,
+        super._();
 
   factory _$BluRayItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$BluRayItemImplFromJson(json);
@@ -283,9 +284,18 @@ class _$BluRayItemImpl extends _BluRayItem {
   @override
   final int? year;
 
-  /// Format type (Blu-ray, DVD, 4K, etc.)
+  /// Format types (Blu-ray, DVD, 4K, etc.) - derived from URL
+  final List<String>? _format;
+
+  /// Format types (Blu-ray, DVD, 4K, etc.) - derived from URL
   @override
-  final String? format;
+  List<String>? get format {
+    final value = _format;
+    if (value == null) return null;
+    if (_format is EqualUnmodifiableListView) return _format;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
 
   /// Universal Product Code as a BigInt for proper numeric handling
   @override
@@ -331,7 +341,7 @@ class _$BluRayItemImpl extends _BluRayItem {
             other is _$BluRayItemImpl &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.year, year) || other.year == year) &&
-            (identical(other.format, format) || other.format == format) &&
+            const DeepCollectionEquality().equals(other._format, _format) &&
             (identical(other.upc, upc) || other.upc == upc) &&
             (identical(other.movieUrl, movieUrl) ||
                 other.movieUrl == movieUrl) &&
@@ -354,7 +364,7 @@ class _$BluRayItemImpl extends _BluRayItem {
       runtimeType,
       title,
       year,
-      format,
+      const DeepCollectionEquality().hash(_format),
       upc,
       movieUrl,
       coverImageUrl,
@@ -384,7 +394,7 @@ abstract class _BluRayItem extends BluRayItem {
   const factory _BluRayItem(
       {final String? title,
       final int? year,
-      final String? format,
+      final List<String>? format,
       final BigInt? upc,
       final String? movieUrl,
       final String? coverImageUrl,
@@ -406,9 +416,9 @@ abstract class _BluRayItem extends BluRayItem {
   @override
   int? get year;
 
-  /// Format type (Blu-ray, DVD, 4K, etc.)
+  /// Format types (Blu-ray, DVD, 4K, etc.) - derived from URL
   @override
-  String? get format;
+  List<String>? get format;
 
   /// Universal Product Code as a BigInt for proper numeric handling
   @override

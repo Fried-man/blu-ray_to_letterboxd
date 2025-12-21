@@ -267,7 +267,7 @@ class BluRayScraper {
             title: title,
             year: year != null ? int.tryParse(year) : null,
             endYear: endYear != null && endYear != '-' ? int.tryParse(endYear) : null,
-            format: format,
+            format: format != null ? [format] : null,
             upc: upc != null ? BigInt.tryParse(upc) : null,
             movieUrl: movieUrl,
             coverImageUrl: coverImageUrl,
