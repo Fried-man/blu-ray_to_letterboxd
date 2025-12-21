@@ -377,6 +377,55 @@ class CollectionScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Cover Image
+              if (item.coverImageUrl != null && item.coverImageUrl!.isNotEmpty)
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.coverImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          child: Icon(
+                            Icons.movie,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
               // Title and Year
               Row(
                 children: [
@@ -554,7 +603,7 @@ class _ResultsSection extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 400,
-                      childAspectRatio: 0.7,
+                      childAspectRatio: 1.0, // Adjusted for cover images
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                     ),
