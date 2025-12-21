@@ -12,6 +12,7 @@ class BluRayItem {
   final String? globalParentId; // Blu-ray.com global parent ID
   final String? categoryId; // Blu-ray.com category ID
   final String? category; // Derived category name from categoryId
+  final String? endYear; // End year for collections (e.g., "2020" or "-" for ongoing)
 
   const BluRayItem({
     this.title,
@@ -25,6 +26,7 @@ class BluRayItem {
     this.globalParentId,
     this.categoryId,
     this.category,
+    this.endYear,
   });
 
   /// Creates a BluRayItem from a map (useful for JSON serialization)
@@ -41,6 +43,7 @@ class BluRayItem {
       globalParentId: map['globalParentId']?.toString(),
       categoryId: map['categoryId']?.toString(),
       category: null, // Will be set by consumer if needed
+      endYear: map['endYear']?.toString(),
     );
   }
 
@@ -58,6 +61,7 @@ class BluRayItem {
       'globalParentId': globalParentId,
       'categoryId': categoryId,
       'category': category,
+      'endYear': endYear,
     };
   }
 
@@ -74,6 +78,7 @@ class BluRayItem {
     String? globalParentId,
     String? categoryId,
     String? category,
+    String? endYear,
   }) {
     return BluRayItem(
       title: title ?? this.title,
@@ -87,6 +92,7 @@ class BluRayItem {
       globalParentId: globalParentId ?? this.globalParentId,
       categoryId: categoryId ?? this.categoryId,
       category: category ?? this.category,
+      endYear: endYear ?? this.endYear,
     );
   }
 

@@ -176,9 +176,11 @@ class BluRayScraper {
       if (titleWithFormat != null && titleWithFormat.isNotEmpty) {
           // Parse title and year from the title attribute
           // Format: "Movie Title Format (Year)" e.g., "Top Gun: Maverick 4K (2022)"
+          // Also handle year ranges: "(2012-2020)" or "(2012-)" for ongoing collections
           final titleMatch = RegExp(r'^(.+?)\s*\(([^)]+)\)$').firstMatch(titleWithFormat);
           String? title;
           String? year;
+          String? endYear;
           String? format;
 
           if (titleMatch != null) {
@@ -186,13 +188,37 @@ class BluRayScraper {
             final yearAndFormat = titleMatch.group(2)?.trim();
 
             if (yearAndFormat != null) {
-              // Extract year from the parentheses content
-              final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(yearAndFormat);
-              if (yearMatch != null) {
-                year = yearMatch.group(0);
-                // Remove year from title if it's at the end
-                if (fullTitle != null && year != null) {
-                  title = fullTitle.replaceAll(RegExp(r'\s*\(?\s*' + year + r'\s*\)?\s*$'), '').trim();
+              // Check for year range patterns: "2012-2020" or "2012-"
+              final yearRangeMatch = RegExp(r'\b(19|20)\d{2}\s*-\s*((19|20)\d{2})?\s*$').firstMatch(yearAndFormat);
+              if (yearRangeMatch != null) {
+                // Extract start year
+                year = yearRangeMatch.group(1) != null ? yearRangeMatch.group(0)?.substring(0, 4) : null;
+                // Extract end year (if present, otherwise it's ongoing with "-")
+                final endYearPart = yearRangeMatch.group(2);
+                if (endYearPart != null && endYearPart.isNotEmpty) {
+                  endYear = endYearPart;
+                } else if (yearAndFormat.contains('-')) {
+                  // Ongoing collection (ends with "-")
+                  endYear = '-';
+                }
+              } else {
+                // Extract single year from the parentheses content
+                final yearMatch = RegExp(r'\b(19|20)\d{2}\b').firstMatch(yearAndFormat);
+                if (yearMatch != null) {
+                  year = yearMatch.group(0);
+                }
+              }
+
+              // Remove year information from title
+              if (fullTitle != null && (year != null || endYear != null)) {
+                String yearPattern = '';
+                if (year != null && endYear != null) {
+                  yearPattern = r'\s*\(?\s*' + year + r'\s*-\s*' + (endYear == '-' ? r'-' : endYear!) + r'\s*\)?\s*$';
+                } else if (year != null) {
+                  yearPattern = r'\s*\(?\s*' + year + r'\s*\)?\s*$';
+                }
+                if (yearPattern.isNotEmpty) {
+                  title = fullTitle.replaceAll(RegExp(yearPattern), '').trim();
                 } else {
                   title = fullTitle;
                 }
@@ -253,6 +279,7 @@ class BluRayScraper {
           final item = BluRayItem(
             title: title,
             year: year,
+            endYear: endYear,
             format: format,
             upc: upc,
             movieUrl: movieUrl,
