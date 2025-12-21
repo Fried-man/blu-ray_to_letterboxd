@@ -23,19 +23,20 @@ class MainApp extends StatelessWidget {
 
     return MaterialApp.router(
       title: 'Blu-ray to Letterboxd',
-      theme: _buildLetterboxdTheme(),
+      theme: _buildUnderwaterTheme(),
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );
   }
 
-  ThemeData _buildLetterboxdTheme() {
-    // Letterboxd-inspired color scheme
-    const Color letterboxdRed = Color(0xFFE74C3C); // Letterboxd's signature red
-    const Color letterboxdDark = Color(0xFF14181C); // Very dark background
-    const Color letterboxdDarker = Color(0xFF0F1113); // Even darker for cards
-    const Color letterboxdGray = Color(0xFF9CA3AF); // Light gray text
-    const Color letterboxdLightGray = Color(0xFFD1D5DB); // Lighter gray for secondary text
+  ThemeData _buildUnderwaterTheme() {
+    // Underwater-inspired color scheme
+    const Color oceanBlue = Color(0xFF006994); // Deep ocean blue - primary
+    const Color deepNavy = Color(0xFF0A1929); // Very dark navy background
+    const Color darkerNavy = Color(0xFF06101A); // Even darker for cards
+    const Color aquaAccent = Color(0xFF00CED1); // Turquoise accent
+    const Color waveGray = Color(0xFF9CA3AF); // Light gray text
+    const Color seafoamGray = Color(0xFFD1D5DB); // Lighter gray for secondary text
 
     return ThemeData(
       useMaterial3: true,
@@ -43,38 +44,38 @@ class MainApp extends StatelessWidget {
 
       // Color scheme
       colorScheme: const ColorScheme.dark(
-        primary: letterboxdRed,
+        primary: oceanBlue,
         onPrimary: Colors.white,
-        primaryContainer: Color(0xFF2A1815), // Dark red container
-        onPrimaryContainer: letterboxdLightGray,
-        secondary: Color(0xFF374151), // Dark gray
-        onSecondary: letterboxdLightGray,
-        tertiary: letterboxdRed,
+        primaryContainer: Color(0xFF003d5c), // Darker ocean blue container
+        onPrimaryContainer: seafoamGray,
+        secondary: Color(0xFF1e3a5f), // Dark teal
+        onSecondary: seafoamGray,
+        tertiary: aquaAccent,
         onTertiary: Colors.white,
-        surface: letterboxdDark,
+        surface: deepNavy,
         onSurface: Colors.white,
-        surfaceVariant: letterboxdDarker,
-        onSurfaceVariant: letterboxdGray,
-        background: letterboxdDark,
+        surfaceVariant: darkerNavy,
+        onSurfaceVariant: waveGray,
+        background: deepNavy,
         onBackground: Colors.white,
         error: Color(0xFFEF4444),
         onError: Colors.white,
         outline: Color(0xFF4B5563),
-        outlineVariant: Color(0xFF374151),
+        outlineVariant: Color(0xFF1e3a5f),
         shadow: Color(0xFF000000),
         scrim: Color(0xFF000000),
         inverseSurface: Colors.white,
-        onInverseSurface: letterboxdDark,
-        inversePrimary: letterboxdRed,
-        surfaceTint: letterboxdDark,
+        onInverseSurface: deepNavy,
+        inversePrimary: oceanBlue,
+        surfaceTint: deepNavy,
       ),
 
       // Scaffold background
-      scaffoldBackgroundColor: letterboxdDark,
+      scaffoldBackgroundColor: deepNavy,
 
       // App bar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: letterboxdDark,
+        backgroundColor: deepNavy,
         foregroundColor: Colors.white,
         elevation: 0,
         shadowColor: Colors.transparent,
@@ -83,10 +84,10 @@ class MainApp extends StatelessWidget {
 
       // Card theme
       cardTheme: CardThemeData(
-        color: letterboxdDarker,
+        color: darkerNavy,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -95,12 +96,12 @@ class MainApp extends StatelessWidget {
       // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: letterboxdRed,
+          backgroundColor: oceanBlue,
           foregroundColor: Colors.white,
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -108,10 +109,10 @@ class MainApp extends StatelessWidget {
       // Outlined button theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: letterboxdLightGray,
-          side: const BorderSide(color: Color(0xFF4B5563)),
+          foregroundColor: seafoamGray,
+          side: const BorderSide(color: Color(0xFF1e3a5f)),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -119,35 +120,35 @@ class MainApp extends StatelessWidget {
       // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF1F2937), // Dark input background
+        fillColor: const Color(0xFF0f1a2a), // Dark ocean input background
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF4B5563)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1e3a5f)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF4B5563)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF1e3a5f)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: letterboxdRed),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: aquaAccent),
         ),
-        labelStyle: const TextStyle(color: letterboxdGray),
-        hintStyle: const TextStyle(color: Color(0xFF6B7280)),
+        labelStyle: const TextStyle(color: waveGray),
+        hintStyle: const TextStyle(color: Color(0xFF64748b)),
       ),
 
       // Chip theme
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFF1F2937),
-        selectedColor: letterboxdRed.withOpacity(0.2),
-        checkmarkColor: letterboxdRed,
-        deleteIconColor: letterboxdGray,
+        backgroundColor: const Color(0xFF0f1a2a),
+        selectedColor: aquaAccent.withOpacity(0.2),
+        checkmarkColor: aquaAccent,
+        deleteIconColor: waveGray,
         labelStyle: const TextStyle(color: Colors.white),
-        secondaryLabelStyle: const TextStyle(color: letterboxdGray),
+        secondaryLabelStyle: const TextStyle(color: waveGray),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
-        side: const BorderSide(color: Color(0xFF4B5563)),
+        side: const BorderSide(color: Color(0xFF1e3a5f)),
       ),
 
       // Text theme
@@ -162,52 +163,52 @@ class MainApp extends StatelessWidget {
         titleMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         titleSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
         bodyLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
-        bodyMedium: TextStyle(color: letterboxdLightGray, fontWeight: FontWeight.w400),
-        bodySmall: TextStyle(color: letterboxdGray, fontWeight: FontWeight.w400),
+        bodyMedium: TextStyle(color: seafoamGray, fontWeight: FontWeight.w400),
+        bodySmall: TextStyle(color: waveGray, fontWeight: FontWeight.w400),
         labelLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-        labelMedium: TextStyle(color: letterboxdLightGray, fontWeight: FontWeight.w500),
-        labelSmall: TextStyle(color: letterboxdGray, fontWeight: FontWeight.w500),
+        labelMedium: TextStyle(color: seafoamGray, fontWeight: FontWeight.w500),
+        labelSmall: TextStyle(color: waveGray, fontWeight: FontWeight.w500),
       ),
 
       // Icon theme
       iconTheme: const IconThemeData(
-        color: letterboxdLightGray,
+        color: seafoamGray,
       ),
 
       // Progress indicator theme
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: letterboxdRed,
-        linearTrackColor: Color(0xFF4B5563),
+        color: aquaAccent,
+        linearTrackColor: Color(0xFF1e3a5f),
       ),
 
       // Divider theme
       dividerTheme: const DividerThemeData(
-        color: Color(0xFF374151),
+        color: Color(0xFF1e3a5f),
         thickness: 1,
       ),
 
       // SnackBar theme
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: letterboxdDarker,
+        backgroundColor: darkerNavy,
         contentTextStyle: const TextStyle(color: Colors.white),
-        actionTextColor: letterboxdRed,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-
-      // Dialog theme
-      dialogTheme: DialogThemeData(
-        backgroundColor: letterboxdDarker,
-        surfaceTintColor: Colors.transparent,
+        actionTextColor: aquaAccent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
 
+      // Dialog theme
+      dialogTheme: DialogThemeData(
+        backgroundColor: darkerNavy,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+
       // Bottom sheet theme
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: letterboxdDarker,
+        backgroundColor: darkerNavy,
         surfaceTintColor: Colors.transparent,
       ),
     );
