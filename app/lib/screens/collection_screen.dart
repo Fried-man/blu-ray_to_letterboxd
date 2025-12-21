@@ -285,19 +285,35 @@ class CollectionScreen extends ConsumerWidget {
                   ),
                 ),
 
-              // Title and Year
+              // Title
+              Text(
+                item.title ?? 'Unknown Title',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+
+              // Format badges and Year
               Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      item.title ?? 'Unknown Title',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  // Format chips on the left
+                  if (item.format != null && item.format!.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: item.format!.map((format) =>
+                        _buildInfoChip(context, format, Icons.album, Theme.of(context).colorScheme.secondary)
+                      ).toList(),
                     ),
-                  ),
+
+                  // Expanded spacer
+                  if (item.format != null && item.format!.isNotEmpty && getYearDisplayText(item) != null)
+                    const Spacer(),
+
+                  // Year chip on the right
                   if (getYearDisplayText(item) != null)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -315,17 +331,6 @@ class CollectionScreen extends ConsumerWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-
-              // Format badges
-              if (item.format != null && item.format!.isNotEmpty)
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: item.format!.map((format) =>
-                    _buildInfoChip(context, format, Icons.album, Theme.of(context).colorScheme.secondary)
-                  ).toList(),
-                ),
               const SizedBox(height: 8),
 
               // UPC if available
