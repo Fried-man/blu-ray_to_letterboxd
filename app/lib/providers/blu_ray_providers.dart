@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
+import '../utils/format_filter_utils.dart';
 
 /// Service provider
 final bluRayServiceProvider = Provider<BluRayCollectionService>((ref) {
@@ -53,7 +54,10 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
 
       // Apply format filter
       if (selectedFormat != 'All') {
-        filtered = filtered.where((item) => (item.format ?? []).contains(selectedFormat)).toList();
+        filtered = filtered.where((item) {
+          final itemFormats = item.format ?? [];
+          return matchesFormatFilter(itemFormats, selectedFormat);
+        }).toList();
         logger.logState('Applied format filter "$selectedFormat": ${filtered.length} items remaining');
       }
 
@@ -105,22 +109,31 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
   );
 });
 
-/// Provider for available formats
+/// Provider for available format filter options
 final availableFormatsProvider = Provider<List<String>>((ref) {
   final collectionAsync = ref.watch(collectionStateProvider);
 
   return collectionAsync.maybeWhen(
     data: (items) {
-      final allFormats = <String>{};
+      final formatCombinations = <String>{};
+
       for (final item in items) {
-        if (item.format != null) {
-          allFormats.addAll(item.format!);
+        final formats = item.format ?? [];
+        if (formats.isEmpty) {
+          formatCombinations.add('No format');
+        } else if (formats.length == 1) {
+          formatCombinations.add('${formats[0]} only');
+        } else if (formats.length == 2 && formats.contains('4K') && formats.contains('Blu-ray')) {
+          formatCombinations.add('4K and Blu-ray');
+        } else {
+          // For other combinations, create a descriptive name
+          formatCombinations.add(formats.join(' + '));
         }
       }
 
-      final formats = ['All', ...allFormats.toList()..sort()];
-      logger.logState('Available formats: $formats');
-      return formats;
+      final filterOptions = ['All', ...formatCombinations.toList()..sort()];
+      logger.logState('Available format filters: $filterOptions');
+      return filterOptions;
     },
     orElse: () => ['All'],
   );

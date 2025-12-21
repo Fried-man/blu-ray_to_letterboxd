@@ -1,6 +1,7 @@
 import 'blu_ray_scraper.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../utils/logger.dart';
+import '../utils/format_filter_utils.dart';
 
 /// Service for managing Blu-ray collection data fetching and processing
 class BluRayCollectionService {
@@ -47,7 +48,8 @@ class BluRayCollectionService {
     if (format == 'All' || format.isEmpty) {
       return items;
     }
-    return items.where((item) => (item.format ?? []).contains(format)).toList();
+
+    return items.where((item) => matchesFormatFilter(item.format ?? [], format)).toList();
   }
 
   /// Searches items by title

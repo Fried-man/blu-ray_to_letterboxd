@@ -7,6 +7,7 @@ import '../providers/blu_ray_providers.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
+import '../utils/format_filter_utils.dart';
 
 // Web-specific import
 import 'dart:html' as html show window;
@@ -600,7 +601,10 @@ class _ResultsSection extends ConsumerWidget {
 
     // Apply format filter
     if (selectedFormat != 'All') {
-      filtered = filtered.where((item) => (item.format ?? []).contains(selectedFormat)).toList();
+      filtered = filtered.where((item) {
+        final itemFormats = item.format ?? [];
+        return matchesFormatFilter(itemFormats, selectedFormat);
+      }).toList();
     }
 
     // Apply search filter - only search in available fields
