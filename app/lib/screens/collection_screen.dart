@@ -180,17 +180,19 @@ class CollectionScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.error),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Failed to load collection',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     snapshot.error.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -271,7 +273,7 @@ class CollectionScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.3),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -321,7 +323,7 @@ class CollectionScreen extends ConsumerWidget {
                   spacing: 4,
                   runSpacing: 4,
                   children: item.format!.map((format) =>
-                    _buildInfoChip(context, format, Icons.album, Colors.blue)
+                    _buildInfoChip(context, format, Icons.album, Theme.of(context).colorScheme.secondary)
                   ).toList(),
                 ),
               const SizedBox(height: 8),
@@ -336,6 +338,9 @@ class CollectionScreen extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+
+              // Expanded spacer to push content up and button down
+              const Spacer(),
 
               // Movie URL button if available
               if (item.movieUrl != null && item.movieUrl!.isNotEmpty) ...[
@@ -374,9 +379,6 @@ class CollectionScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-
-              // Spacer for layout
-              const Spacer(),
             ],
           ),
         ),
