@@ -66,11 +66,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Please enter your user ID from blu-ray.com to view your collection.',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -109,11 +109,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   logger.logUI('User clicked "My name is Ben" link');
                   context.go('/user/987553/collection');
                 },
-                child: const Text(
+                child: Text(
                   'My name is Ben',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                     decoration: TextDecoration.underline,
                   ),
                   textAlign: TextAlign.right,
