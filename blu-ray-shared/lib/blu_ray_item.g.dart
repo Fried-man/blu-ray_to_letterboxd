@@ -18,7 +18,6 @@ _$BluRayItemImpl _$$BluRayItemImplFromJson(Map<String, dynamic> json) =>
       globalProductId: json['globalProductId'] as String?,
       globalParentId: json['globalParentId'] as String?,
       categoryId: json['categoryId'] as String?,
-      category: json['category'] as String?,
       endYear: (json['endYear'] as num?)?.toInt(),
     );
 
@@ -34,6 +33,5 @@ Map<String, dynamic> _$$BluRayItemImplToJson(_$BluRayItemImpl instance) =>
       'globalProductId': instance.globalProductId,
       'globalParentId': instance.globalParentId,
       'categoryId': instance.categoryId,
-      'category': instance.category,
       'endYear': instance.endYear,
     };

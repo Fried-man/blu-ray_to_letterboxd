@@ -42,26 +42,6 @@ class BluRayCollectionService {
     return _scraper.isValidUserId(userId);
   }
 
-  /// Gets a summary of the collection (counts by category/format)
-  Map<String, int> getCollectionSummary(List<BluRayItem> items) {
-    final summary = <String, int>{};
-
-    for (final item in items) {
-      final category = item.category ?? 'Uncategorized';
-      summary[category] = (summary[category] ?? 0) + 1;
-    }
-
-    return summary;
-  }
-
-  /// Filters items by category
-  List<BluRayItem> filterByCategory(List<BluRayItem> items, String category) {
-    if (category == 'All' || category.isEmpty) {
-      return items;
-    }
-    return items.where((item) => item.category == category).toList();
-  }
-
   /// Filters items by format
   List<BluRayItem> filterByFormat(List<BluRayItem> items, String format) {
     if (format == 'All' || format.isEmpty) {
@@ -77,17 +57,6 @@ class BluRayCollectionService {
     final lowercaseQuery = query.toLowerCase();
     return items.where((item) =>
         item.title?.toLowerCase().contains(lowercaseQuery) ?? false).toList();
-  }
-
-  /// Gets all unique categories from the collection
-  List<String> getCategories(List<BluRayItem> items) {
-    final categories = items
-        .map((item) => item.category ?? 'Uncategorized')
-        .where((category) => category.isNotEmpty)
-        .toSet()
-        .toList();
-    categories.sort();
-    return categories;
   }
 
   /// Gets all unique formats from the collection

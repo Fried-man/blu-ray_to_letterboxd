@@ -43,16 +43,6 @@ class CollectionController {
     return sorted;
   }
 
-  /// Gets unique categories from items
-  List<String> getCategories(List<BluRayItem> items) {
-    return ['All', ...items
-        .map((item) => item.category ?? 'Uncategorized')
-        .where((category) => category.isNotEmpty)
-        .toSet()
-        .toList()
-        ..sort()];
-  }
-
   /// Gets unique formats from items
   List<String> getFormats(List<BluRayItem> items) {
     return ['All', ...items

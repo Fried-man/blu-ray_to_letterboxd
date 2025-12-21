@@ -38,9 +38,6 @@ class BluRayItem with _$BluRayItem {
     /// Blu-ray.com category ID
     String? categoryId,
 
-    /// Derived category name from categoryId
-    String? category,
-
     /// End year for collections as an integer (null for ongoing collections)
     int? endYear,
   }) = _BluRayItem;

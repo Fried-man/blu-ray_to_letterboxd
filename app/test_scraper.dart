@@ -38,20 +38,11 @@ Future<void> testUserId(String userId, BluRayScraper scraper, BluRayCollectionSe
       for (var i = 0; i < items.length && i < 3; i++) {
         final item = items[i];
         print('  ${i + 1}. ${item.title ?? 'No Title'} (${item.year ?? 'No Year'}) - ${item.format ?? 'No Format'}');
-        if (item.category != null) {
-          print('     Category: ${item.category}');
-        }
       }
 
       // Test service methods
-      final summary = service.getCollectionSummary(items);
-      print('\n📊 Collection Summary: $summary');
-
-      final categories = service.getCategories(items);
-      print('📂 Categories: $categories');
-
       final formats = service.getFormats(items);
-      print('💿 Formats: $formats');
+      print('\n💿 Formats: $formats');
 
     } else {
       print('📭 Collection appears to be empty or private');

@@ -50,9 +50,6 @@ mixin _$BluRayItem {
   /// Blu-ray.com category ID
   String? get categoryId => throw _privateConstructorUsedError;
 
-  /// Derived category name from categoryId
-  String? get category => throw _privateConstructorUsedError;
-
   /// End year for collections as an integer (null for ongoing collections)
   int? get endYear => throw _privateConstructorUsedError;
 
@@ -83,7 +80,6 @@ abstract class $BluRayItemCopyWith<$Res> {
       String? globalProductId,
       String? globalParentId,
       String? categoryId,
-      String? category,
       int? endYear});
 }
 
@@ -112,7 +108,6 @@ class _$BluRayItemCopyWithImpl<$Res, $Val extends BluRayItem>
     Object? globalProductId = freezed,
     Object? globalParentId = freezed,
     Object? categoryId = freezed,
-    Object? category = freezed,
     Object? endYear = freezed,
   }) {
     return _then(_value.copyWith(
@@ -156,10 +151,6 @@ class _$BluRayItemCopyWithImpl<$Res, $Val extends BluRayItem>
           ? _value.categoryId
           : categoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      category: freezed == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as String?,
       endYear: freezed == endYear
           ? _value.endYear
           : endYear // ignore: cast_nullable_to_non_nullable
@@ -187,7 +178,6 @@ abstract class _$$BluRayItemImplCopyWith<$Res>
       String? globalProductId,
       String? globalParentId,
       String? categoryId,
-      String? category,
       int? endYear});
 }
 
@@ -214,7 +204,6 @@ class __$$BluRayItemImplCopyWithImpl<$Res>
     Object? globalProductId = freezed,
     Object? globalParentId = freezed,
     Object? categoryId = freezed,
-    Object? category = freezed,
     Object? endYear = freezed,
   }) {
     return _then(_$BluRayItemImpl(
@@ -258,10 +247,6 @@ class __$$BluRayItemImplCopyWithImpl<$Res>
           ? _value.categoryId
           : categoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      category: freezed == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
-              as String?,
       endYear: freezed == endYear
           ? _value.endYear
           : endYear // ignore: cast_nullable_to_non_nullable
@@ -284,7 +269,6 @@ class _$BluRayItemImpl extends _BluRayItem {
       this.globalProductId,
       this.globalParentId,
       this.categoryId,
-      this.category,
       this.endYear})
       : super._();
 
@@ -331,17 +315,13 @@ class _$BluRayItemImpl extends _BluRayItem {
   @override
   final String? categoryId;
 
-  /// Derived category name from categoryId
-  @override
-  final String? category;
-
   /// End year for collections as an integer (null for ongoing collections)
   @override
   final int? endYear;
 
   @override
   String toString() {
-    return 'BluRayItem(title: $title, year: $year, format: $format, upc: $upc, movieUrl: $movieUrl, coverImageUrl: $coverImageUrl, productId: $productId, globalProductId: $globalProductId, globalParentId: $globalParentId, categoryId: $categoryId, category: $category, endYear: $endYear)';
+    return 'BluRayItem(title: $title, year: $year, format: $format, upc: $upc, movieUrl: $movieUrl, coverImageUrl: $coverImageUrl, productId: $productId, globalProductId: $globalProductId, globalParentId: $globalParentId, categoryId: $categoryId, endYear: $endYear)';
   }
 
   @override
@@ -365,8 +345,6 @@ class _$BluRayItemImpl extends _BluRayItem {
                 other.globalParentId == globalParentId) &&
             (identical(other.categoryId, categoryId) ||
                 other.categoryId == categoryId) &&
-            (identical(other.category, category) ||
-                other.category == category) &&
             (identical(other.endYear, endYear) || other.endYear == endYear));
   }
 
@@ -384,7 +362,6 @@ class _$BluRayItemImpl extends _BluRayItem {
       globalProductId,
       globalParentId,
       categoryId,
-      category,
       endYear);
 
   /// Create a copy of BluRayItem
@@ -415,7 +392,6 @@ abstract class _BluRayItem extends BluRayItem {
       final String? globalProductId,
       final String? globalParentId,
       final String? categoryId,
-      final String? category,
       final int? endYear}) = _$BluRayItemImpl;
   const _BluRayItem._() : super._();
 
@@ -461,10 +437,6 @@ abstract class _BluRayItem extends BluRayItem {
   /// Blu-ray.com category ID
   @override
   String? get categoryId;
-
-  /// Derived category name from categoryId
-  @override
-  String? get category;
 
   /// End year for collections as an integer (null for ongoing collections)
   @override

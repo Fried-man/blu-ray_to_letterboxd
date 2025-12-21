@@ -28,7 +28,6 @@ final collectionStateProvider = StateNotifierProvider<CollectionNotifier, AsyncV
 /// State for filtering and searching
 /// Note: Only filters that work with API data are enabled
 final searchQueryProvider = StateProvider<String>((ref) => '');
-final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
 final selectedFormatProvider = StateProvider<String>((ref) => 'All');
 // Disabled filters - not available in API data
 // final selectedConditionProvider = StateProvider<String>((ref) => 'All');
@@ -41,23 +40,16 @@ final sortOrderProvider = StateProvider<String>((ref) => 'Ascending');
 final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
   final collectionAsync = ref.watch(collectionStateProvider);
   final searchQuery = ref.watch(searchQueryProvider);
-  final selectedCategory = ref.watch(selectedCategoryProvider);
   final selectedFormat = ref.watch(selectedFormatProvider);
   // Note: condition, watched, wishlist filters disabled - not in API data
   final sortBy = ref.watch(sortByProvider);
   final sortOrder = ref.watch(sortOrderProvider);
 
-  logger.logState('Computing filtered items with search: "$searchQuery", category: "$selectedCategory", format: "$selectedFormat", sort: "$sortBy $sortOrder"');
+  logger.logState('Computing filtered items with search: "$searchQuery", format: "$selectedFormat", sort: "$sortBy $sortOrder"');
 
   return collectionAsync.maybeWhen(
     data: (items) {
       var filtered = items;
-
-      // Apply category filter
-      if (selectedCategory != 'All') {
-        filtered = filtered.where((item) => item.category == selectedCategory).toList();
-        logger.logState('Applied category filter "$selectedCategory": ${filtered.length} items remaining');
-      }
 
       // Apply format filter
       if (selectedFormat != 'All') {
@@ -107,32 +99,6 @@ final filteredItemsProvider = Provider<List<BluRayItem>>((ref) {
     },
     orElse: () => [],
   );
-});
-
-/// Provider for collection summary
-final collectionSummaryProvider = Provider<Map<String, int>>((ref) {
-  final collectionAsync = ref.watch(collectionStateProvider);
-
-  return collectionAsync.maybeWhen(
-    data: (items) {
-      final summary = <String, int>{};
-      for (final item in items) {
-        final category = item.category ?? 'Uncategorized';
-        summary[category] = (summary[category] ?? 0) + 1;
-      }
-      logger.logState('Generated collection summary: $summary');
-      return summary;
-    },
-    orElse: () => {},
-  );
-});
-
-/// Provider for available categories
-final availableCategoriesProvider = Provider<List<String>>((ref) {
-  final summary = ref.watch(collectionSummaryProvider);
-  final categories = ['All', ...summary.keys.toList()..sort()];
-  logger.logState('Available categories: $categories');
-  return categories;
 });
 
 /// Provider for available formats

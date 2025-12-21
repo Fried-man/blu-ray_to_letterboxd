@@ -45,7 +45,6 @@ void showItemDetails(BuildContext context, BluRayItem item) {
             // Basic Info
             _buildDetailRow('Year', getYearDisplayText(item)),
             _buildDetailRow('Format', item.format),
-            _buildDetailRow('Category', item.category),
             _buildDetailRow('Category ID', item.categoryId),
 
             const Divider(),
@@ -208,8 +207,6 @@ class CollectionScreen extends ConsumerWidget {
         }
 
         final items = snapshot.data ?? [];
-        final summary = ref.watch(collectionSummaryProvider);
-        final categories = ref.watch(availableCategoriesProvider);
         final formats = ref.watch(availableFormatsProvider);
 
         return Scaffold(
@@ -253,13 +250,6 @@ class CollectionScreen extends ConsumerWidget {
                       '${items.length} total items',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    if (summary.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'By Category: ${summary.entries.map((e) => '${e.key}: ${e.value}').join(', ')}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -286,53 +276,25 @@ class CollectionScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // First row: Category, Format, Condition
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Category',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(selectedCategoryProvider),
-                            items: categories.map((category) {
-                              return DropdownMenuItem(
-                                value: category,
-                                child: Text(category),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Category filter changed: "$value"');
-                                ref.read(selectedCategoryProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Format',
-                              border: OutlineInputBorder(),
-                            ),
-                            value: ref.watch(selectedFormatProvider),
-                            items: formats.map((format) {
-                              return DropdownMenuItem(
-                                value: format,
-                                child: Text(format),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                logger.logUI('Format filter changed: "$value"');
-                                ref.read(selectedFormatProvider.notifier).state = value;
-                              }
-                            },
-                          ),
-                        ),
-                      ],
+                    // Format filter
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Format',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: ref.watch(selectedFormatProvider),
+                      items: formats.map((format) {
+                        return DropdownMenuItem(
+                          value: format,
+                          child: Text(format),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          logger.logUI('Format filter changed: "$value"');
+                          ref.read(selectedFormatProvider.notifier).state = value;
+                        }
+                      },
                     ),
                     const SizedBox(height: 12),
 
@@ -464,18 +426,10 @@ class CollectionScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              // Format and Category badges
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
-                  if (item.format != null)
-                    _buildInfoChip(context, item.format!, Icons.album, Colors.blue),
-                  if (item.category != null && item.category != 'Uncategorized')
-                    _buildInfoChip(context, item.category!, Icons.category, Colors.green),
-                ],
-              ),
-              const SizedBox(height: 8              ),
+              // Format badge
+              if (item.format != null)
+                _buildInfoChip(context, item.format!, Icons.album, Colors.blue),
+              const SizedBox(height: 8),
 
               // UPC if available
               if (item.upc != null)
@@ -631,18 +585,12 @@ class _ResultsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch filter providers
     final searchQuery = ref.watch(searchQueryProvider);
-    final selectedCategory = ref.watch(selectedCategoryProvider);
     final selectedFormat = ref.watch(selectedFormatProvider);
     final sortBy = ref.watch(sortByProvider);
     final sortOrder = ref.watch(sortOrderProvider);
 
     // Apply filters locally
     var filtered = items;
-
-    // Apply category filter
-    if (selectedCategory != 'All') {
-      filtered = filtered.where((item) => (item.category ?? 'Uncategorized') == selectedCategory).toList();
-    }
 
     // Apply format filter
     if (selectedFormat != 'All') {
