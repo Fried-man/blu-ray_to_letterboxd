@@ -7,9 +7,10 @@ import '../providers/blu_ray_providers.dart';
 import 'package:blu_ray_shared/blu_ray_item.dart';
 import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
+import '../utils/csv_export_utils.dart';
 
 // Web-specific import
-import 'dart:html' as html show window;
+import 'dart:html' as html show window, Blob, Url, AnchorElement;
 
 // Helper function to get year display text
 String? getYearDisplayText(BluRayItem item) {
@@ -97,6 +98,65 @@ class CollectionScreen extends ConsumerWidget {
   final String userId;
 
   const CollectionScreen({super.key, required this.userId});
+
+  Future<void> _exportToCsv(BuildContext context, WidgetRef ref) async {
+    try {
+      // Get the current collection data
+      final items = ref.read(collectionStateProvider).maybeWhen(
+        data: (items) => items,
+        orElse: () => <BluRayItem>[],
+      );
+
+      if (items.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No items to export')),
+          );
+        }
+        return;
+      }
+
+      // Convert to CSV
+      final csvContent = CsvExportUtils.convertToLetterboxdCsv(items);
+
+      // Create filename with timestamp
+      final timestamp = DateTime.now().toIso8601String().split('T')[0]; // YYYY-MM-DD
+      final filename = 'blu-ray-collection-letterboxd-$timestamp.csv';
+
+      if (kIsWeb) {
+        // Web platform - use HTML5 download
+        final blob = html.Blob([csvContent], 'text/csv;charset=utf-8;');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url);
+        anchor.setAttribute('download', filename);
+        anchor.click();
+        html.Url.revokeObjectUrl(url);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Exported ${items.length} items to $filename')),
+          );
+        }
+      } else {
+        // Mobile platforms - could save to downloads folder
+        // For now, show a message that this feature is web-only
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('CSV export is currently available on web only')),
+          );
+        }
+      }
+
+      logger.logUI('Successfully exported ${items.length} items to CSV');
+    } catch (error) {
+      logger.logUI('Error exporting to CSV: $error');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error exporting CSV')),
+        );
+      }
+    }
+  }
 
   Future<List<BluRayItem>> _fetchCollectionForUser(String userId, WidgetRef ref) async {
     // First check cache
@@ -215,6 +275,14 @@ class CollectionScreen extends ConsumerWidget {
             title: Text('Collection - User $userId'),
             backgroundColor: Theme.of(context).colorScheme.inversePrimary,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: () async {
+                  logger.logUI('User tapped save CSV button for user $userId');
+                  await _exportToCsv(context, ref);
+                },
+                tooltip: 'Export to Letterboxd CSV',
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
