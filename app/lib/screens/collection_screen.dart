@@ -534,7 +534,11 @@ class _ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           logger.logUI('User tapped item: ${item.title}');
           onItemTap(context, item);
