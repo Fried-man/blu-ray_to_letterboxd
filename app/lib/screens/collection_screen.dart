@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:html' as html show window, Blob, Url, AnchorElement;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,8 +11,8 @@ import '../services/blu_ray_collection_service.dart';
 import '../utils/logger.dart';
 import '../utils/csv_export_utils.dart';
 
-// Web-specific import
-import 'dart:html' as html show window, Blob, Url, AnchorElement;
+/// Progress callback for CSV export operations
+typedef CsvExportProgressCallback = void Function(String message, int current, int total);
 
 // Helper function to get year display text
 String? getYearDisplayText(BluRayItem item) {
@@ -94,30 +96,148 @@ Widget _buildDetailRow(String label, String? value) {
   );
 }
 
+/// Progress modal for CSV export operations
+class _CsvExportProgressDialog extends StatefulWidget {
+  final Stream<String> progressStream;
+  final VoidCallback onCancel;
+
+  const _CsvExportProgressDialog({
+    required this.progressStream,
+    required this.onCancel,
+  });
+
+  @override
+  State<_CsvExportProgressDialog> createState() => _CsvExportProgressDialogState();
+}
+
+class _CsvExportProgressDialogState extends State<_CsvExportProgressDialog> {
+  String _currentMessage = 'Initializing export...';
+  int _currentItem = 0;
+  int _totalItems = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.progressStream.listen((message) {
+      if (mounted) {
+        setState(() {
+          _currentMessage = message;
+          // Try to extract progress numbers from message
+          final progressMatch = RegExp(r'(\d+)/(\d+)').firstMatch(message);
+          if (progressMatch != null) {
+            _currentItem = int.tryParse(progressMatch.group(1) ?? '0') ?? 0;
+            _totalItems = int.tryParse(progressMatch.group(2) ?? '0') ?? 0;
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _totalItems > 0 ? _currentItem / _totalItems : 0.0;
+
+    return AlertDialog(
+      title: const Text('Exporting to CSV'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          LinearProgressIndicator(
+            value: progress > 0 ? progress : null, // Indeterminate if no progress
+            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _currentMessage,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          if (_totalItems > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$_currentItem of $_totalItems items processed',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: widget.onCancel,
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
+
 class CollectionScreen extends ConsumerWidget {
   final String userId;
 
   const CollectionScreen({super.key, required this.userId});
 
   Future<void> _exportToCsv(BuildContext context, WidgetRef ref) async {
+    // Get the current collection data
+    final items = ref.read(collectionStateProvider).maybeWhen(
+      data: (items) => items,
+      orElse: () => <BluRayItem>[],
+    );
+
+    if (items.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No items to export')),
+        );
+      }
+      return;
+    }
+
+    // Create a stream controller for progress updates
+    final progressController = StreamController<String>.broadcast();
+    bool isCancelled = false;
+
+    // Show progress dialog
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => _CsvExportProgressDialog(
+          progressStream: progressController.stream,
+          onCancel: () {
+            isCancelled = true;
+            progressController.close();
+            Navigator.of(dialogContext).pop();
+          },
+        ),
+      );
+    }
+
     try {
-      // Get the current collection data
-      final items = ref.read(collectionStateProvider).maybeWhen(
-        data: (items) => items,
-        orElse: () => <BluRayItem>[],
+      // Convert to CSV with progress callback
+      final csvContent = await CsvExportUtils.convertToLetterboxdCsv(
+        items,
+        onProgress: (message, current, total) {
+          if (!isCancelled) {
+            progressController.add(message);
+          }
+        },
       );
 
-      if (items.isEmpty) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No items to export')),
-          );
-        }
+      // Close progress dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      progressController.close();
+
+      if (isCancelled) {
+        logger.logUI('CSV export cancelled by user');
         return;
       }
-
-      // Convert to CSV
-      final csvContent = CsvExportUtils.convertToLetterboxdCsv(items);
 
       // Create filename with timestamp
       final timestamp = DateTime.now().toIso8601String().split('T')[0]; // YYYY-MM-DD
@@ -149,6 +269,12 @@ class CollectionScreen extends ConsumerWidget {
 
       logger.logUI('Successfully exported ${items.length} items to CSV');
     } catch (error) {
+      // Close progress dialog if still open
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      progressController.close();
+
       logger.logUI('Error exporting to CSV: $error');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
