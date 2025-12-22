@@ -7,6 +7,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import 'package:blu_ray_api/services/blu_ray_scraper.dart';
 import 'package:blu_ray_api/config.dart';
+import 'package:blu_ray_api/movie_info.dart';
 
 // CORS middleware
 Middleware corsMiddleware = (Handler innerHandler) {
@@ -34,7 +35,8 @@ DateTime? _startupTime;
 final _router = Router()
   ..get('/', _rootHandler)
   ..get('/health', _healthHandler)
-  ..get('/api/user/<userId>/collection', _collectionHandler);
+  ..get('/api/user/<userId>/collection', _collectionHandler)
+  ..get('/api/movie', _movieHandler);
 
 Response _rootHandler(Request req) {
   return Response.ok('Blu-ray API Server\n');
@@ -102,6 +104,55 @@ Future<Response> _collectionHandler(Request request) async {
   }
 }
 
+Future<Response> _movieHandler(Request request) async {
+  final urlParam = request.url.queryParameters['url'];
+
+  if (urlParam == null || urlParam.isEmpty) {
+    return Response(
+      400,
+      body: jsonEncode({
+        'error': 'Movie URL is required',
+        'message': 'Please provide a movie URL as a query parameter: ?url=<movie_url>',
+      }),
+      headers: {'content-type': 'application/json'},
+    );
+  }
+
+  // Decode URL if needed
+  final movieUrl = Uri.decodeComponent(urlParam);
+
+  // Validate URL format
+  if (!movieUrl.startsWith('https://www.blu-ray.com/movies/')) {
+    return Response(
+      400,
+      body: jsonEncode({
+        'error': 'Invalid URL format',
+        'message': 'URL must be a valid Blu-ray.com movie page URL',
+      }),
+      headers: {'content-type': 'application/json'},
+    );
+  }
+
+  try {
+    final MovieInfo movieInfo = await _scraper.fetchMovieInfo(movieUrl);
+
+    return Response.ok(
+      jsonEncode(movieInfo.toJson()),
+      headers: {'content-type': 'application/json'},
+    );
+  } catch (e) {
+    return Response(
+      500,
+      body: jsonEncode({
+        'error': 'Failed to fetch movie info',
+        'message': e.toString(),
+        'movieUrl': movieUrl,
+      }),
+      headers: {'content-type': 'application/json'},
+    );
+  }
+}
+
 void main(List<String> args) async {
   // Record startup time
   _startupTime = DateTime.now();
@@ -121,4 +172,5 @@ void main(List<String> args) async {
   print('Blu-ray API Server listening on http://${server.address.host}:${server.port}');
   print('Health check: http://localhost:${server.port}/health');
   print('Collection API: http://localhost:${server.port}/api/user/{userId}/collection');
+  print('Movie API: http://localhost:${server.port}/api/movie?url=<movie_url>');
 }
