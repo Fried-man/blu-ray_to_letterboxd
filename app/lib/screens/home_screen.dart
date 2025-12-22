@@ -109,14 +109,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   logger.logUI('User clicked "My name is Ben" link');
                   context.go('/user/987553/collection');
                 },
-                child: Text(
-                  'My name is Ben',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.primary,
-                    decoration: TextDecoration.underline,
-                  ),
+                child: RichText(
                   textAlign: TextAlign.right,
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    children: [
+                      const TextSpan(text: 'My name is '),
+                      TextSpan(
+                        text: 'Ben',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
