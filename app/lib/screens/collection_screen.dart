@@ -497,7 +497,7 @@ class _ResultsSection extends ConsumerWidget {
                 : GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 350,
+                      maxCrossAxisExtent: 360,
                       childAspectRatio: 0.8,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
