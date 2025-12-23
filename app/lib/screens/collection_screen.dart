@@ -137,41 +137,62 @@ class _CsvExportProgressDialogState extends State<_CsvExportProgressDialog> {
   Widget build(BuildContext context) {
     final progress = _totalItems > 0 ? _currentItem / _totalItems : 0.0;
 
-    return AlertDialog(
-      title: const Text('Exporting to CSV'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          LinearProgressIndicator(
-            value: progress > 0 ? progress : null, // Indeterminate if no progress
-            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _currentMessage,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          if (_totalItems > 0) ...[
-            const SizedBox(height: 8),
-            Text(
-              '$_currentItem of $_totalItems items processed',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Dialog(
+      child: FractionallySizedBox(
+        widthFactor: 1 / 3,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Exporting to CSV',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: widget.onCancel,
-          child: const Text('Cancel'),
+              const SizedBox(height: 20),
+              LinearProgressIndicator(
+                value: progress > 0 ? progress : null, // Indeterminate if no progress
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: Text(
+                  _currentMessage,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (_totalItems > 0) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '$_currentItem of $_totalItems items processed',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: widget.onCancel,
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
