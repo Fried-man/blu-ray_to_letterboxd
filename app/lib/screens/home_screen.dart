@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/blu_ray_providers.dart';
 import '../utils/logger.dart';
 
@@ -50,6 +52,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('Blu-ray to Letterboxd'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            onPressed: () async {
+              logger.logUI('User clicked GitHub icon');
+              const url = 'https://github.com/Fried-man/blu-ray_to_letterboxd';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url));
+              } else {
+                logger.logUI('Could not launch GitHub URL');
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open GitHub link')),
+                  );
+                }
+              }
+            },
+            icon: const FaIcon(FontAwesomeIcons.github),
+            tooltip: 'View on GitHub',
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
