@@ -53,6 +53,9 @@ mixin _$BluRayItem {
   /// End year for collections as an integer (null for ongoing collections)
   int? get endYear => throw _privateConstructorUsedError;
 
+  /// Type of media: "movie", "collection", or "tv_show"
+  String? get mediaType => throw _privateConstructorUsedError;
+
   /// Serializes this BluRayItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -80,7 +83,8 @@ abstract class $BluRayItemCopyWith<$Res> {
       String? globalProductId,
       String? globalParentId,
       String? categoryId,
-      int? endYear});
+      int? endYear,
+      String? mediaType});
 }
 
 /// @nodoc
@@ -109,6 +113,7 @@ class _$BluRayItemCopyWithImpl<$Res, $Val extends BluRayItem>
     Object? globalParentId = freezed,
     Object? categoryId = freezed,
     Object? endYear = freezed,
+    Object? mediaType = freezed,
   }) {
     return _then(_value.copyWith(
       title: freezed == title
@@ -155,6 +160,10 @@ class _$BluRayItemCopyWithImpl<$Res, $Val extends BluRayItem>
           ? _value.endYear
           : endYear // ignore: cast_nullable_to_non_nullable
               as int?,
+      mediaType: freezed == mediaType
+          ? _value.mediaType
+          : mediaType // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -178,7 +187,8 @@ abstract class _$$BluRayItemImplCopyWith<$Res>
       String? globalProductId,
       String? globalParentId,
       String? categoryId,
-      int? endYear});
+      int? endYear,
+      String? mediaType});
 }
 
 /// @nodoc
@@ -205,6 +215,7 @@ class __$$BluRayItemImplCopyWithImpl<$Res>
     Object? globalParentId = freezed,
     Object? categoryId = freezed,
     Object? endYear = freezed,
+    Object? mediaType = freezed,
   }) {
     return _then(_$BluRayItemImpl(
       title: freezed == title
@@ -251,6 +262,10 @@ class __$$BluRayItemImplCopyWithImpl<$Res>
           ? _value.endYear
           : endYear // ignore: cast_nullable_to_non_nullable
               as int?,
+      mediaType: freezed == mediaType
+          ? _value.mediaType
+          : mediaType // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -269,7 +284,8 @@ class _$BluRayItemImpl extends _BluRayItem {
       this.globalProductId,
       this.globalParentId,
       this.categoryId,
-      this.endYear})
+      this.endYear,
+      this.mediaType})
       : _format = format,
         super._();
 
@@ -329,9 +345,13 @@ class _$BluRayItemImpl extends _BluRayItem {
   @override
   final int? endYear;
 
+  /// Type of media: "movie", "collection", or "tv_show"
+  @override
+  final String? mediaType;
+
   @override
   String toString() {
-    return 'BluRayItem(title: $title, year: $year, format: $format, upc: $upc, movieUrl: $movieUrl, coverImageUrl: $coverImageUrl, productId: $productId, globalProductId: $globalProductId, globalParentId: $globalParentId, categoryId: $categoryId, endYear: $endYear)';
+    return 'BluRayItem(title: $title, year: $year, format: $format, upc: $upc, movieUrl: $movieUrl, coverImageUrl: $coverImageUrl, productId: $productId, globalProductId: $globalProductId, globalParentId: $globalParentId, categoryId: $categoryId, endYear: $endYear, mediaType: $mediaType)';
   }
 
   @override
@@ -355,7 +375,9 @@ class _$BluRayItemImpl extends _BluRayItem {
                 other.globalParentId == globalParentId) &&
             (identical(other.categoryId, categoryId) ||
                 other.categoryId == categoryId) &&
-            (identical(other.endYear, endYear) || other.endYear == endYear));
+            (identical(other.endYear, endYear) || other.endYear == endYear) &&
+            (identical(other.mediaType, mediaType) ||
+                other.mediaType == mediaType));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -372,7 +394,8 @@ class _$BluRayItemImpl extends _BluRayItem {
       globalProductId,
       globalParentId,
       categoryId,
-      endYear);
+      endYear,
+      mediaType);
 
   /// Create a copy of BluRayItem
   /// with the given fields replaced by the non-null parameter values.
@@ -402,7 +425,8 @@ abstract class _BluRayItem extends BluRayItem {
       final String? globalProductId,
       final String? globalParentId,
       final String? categoryId,
-      final int? endYear}) = _$BluRayItemImpl;
+      final int? endYear,
+      final String? mediaType}) = _$BluRayItemImpl;
   const _BluRayItem._() : super._();
 
   factory _BluRayItem.fromJson(Map<String, dynamic> json) =
@@ -451,6 +475,10 @@ abstract class _BluRayItem extends BluRayItem {
   /// End year for collections as an integer (null for ongoing collections)
   @override
   int? get endYear;
+
+  /// Type of media: "movie", "collection", or "tv_show"
+  @override
+  String? get mediaType;
 
   /// Create a copy of BluRayItem
   /// with the given fields replaced by the non-null parameter values.

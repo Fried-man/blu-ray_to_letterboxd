@@ -83,11 +83,29 @@ Future<Response> _collectionHandler(Request request) async {
   try {
     final items = await _scraper.fetchCollection(userId);
 
+    // Add mediaType to each item
+    final itemsWithMediaType = items.map((item) {
+      final itemJson = item.toJson();
+      String mediaType = 'movie';
+      final title = itemJson['title'] as String?;
+      final year = itemJson['year'];
+      final endYear = itemJson['endYear'];
+
+      if (title != null && title.contains('(TV Show)')) {
+        mediaType = 'tv_show';
+      } else if (year != null && endYear != null) {
+        mediaType = 'collection';
+      }
+
+      itemJson['mediaType'] = mediaType;
+      return itemJson;
+    }).toList();
+
     return Response.ok(
       jsonEncode({
         'userId': userId,
         'count': items.length,
-        'items': items.map((item) => item.toJson()).toList(),
+        'items': itemsWithMediaType,
       }),
       headers: {'content-type': 'application/json'},
     );

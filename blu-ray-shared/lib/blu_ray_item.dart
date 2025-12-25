@@ -38,6 +38,7 @@ List<String> parseFormatsFromUrl(String? url) {
   return formats;
 }
 
+
 /// DTO representing a movie item extracted from the Blu-ray.com search endpoint
 /// Contains only the fields that are actually populated from search results
 @freezed
@@ -75,6 +76,9 @@ class BluRayItem with _$BluRayItem {
 
     /// End year for collections as an integer (null for ongoing collections)
     int? endYear,
+
+    /// Type of media: "movie", "collection", or "tv_show"
+    String? mediaType,
   }) = _BluRayItem;
 
   /// Creates a BluRayItem from JSON
